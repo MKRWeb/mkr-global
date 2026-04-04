@@ -396,4 +396,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   UIManager.init();
   await Web3Manager.init(); 
 });
-      
+          
