@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+  <title>MKR Web| Web3 Marketplace</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <div id="monad-splash-screen">
+    <div class="splash-top-bar">
+      <span class="status-indicator">● SYNCED</span>
+      <span class="version-tag">SYSTEM v10.0</span>
+    </div>
+    
+    <div class="splash-main">
+      <div class="glow-orb"></div>
+      <div class="splash-logo-container">
+        <img src="cat_dev.jpg" alt="Web3 Cat Dev" class="big-monad-logo">
+      </div>
+      <h1 class="splash-title">MKR Web</h1>
+      <div class="splash-subtitle">AI × Monad Marketplace</div>
+    </div>
+    
+    <div class="splash-bottom">
+      <p class="splash-desc">Explore natural elements, human rights, and collect exclusive Web3 Hybrid Assets.</p>
+      <button id="initiate-btn" class="app-fab-btn">
+        <span>Enter MKR World 🌎🐎</span>
+        <span class="arrow">➔</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="web3-modal" class="modal-overlay hidden-modal">
+    <div class="modal-content web3-content">
+      <div class="web3-header">
+        <h2>Connect Wallet</h2>
+        <p>Choose a provider to interact with the Monad Network.</p>
+      </div>
+      <div class="web3-providers">
+        <button class="provider-btn" data-wallet="metamask">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
+          MetaMask
+        </button>
+        <button class="provider-btn" data-wallet="haha">
+          <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN611tJS0aEHSULXTrYd09p1KLb3zyzUkpU1FTQsNRtWPmhiPkrUbUmHVq9WMFfi9RA751U3YcjQRdCSFoxrNfg9ln-AcIhFpC4-Lfj1FSH-m1YIvNLimuPuarB6XWxA9D9iXc7QYbMoY8T3umJgMdLFM9LzYEOLVCfaEOrhyphenhyphenSwvjN_9FGzwv_iefVlNY/s512/unnamed.png" alt="HaHa Wallet" style="filter: hue-rotate(250deg);">
+          HaHa Wallet
+        </button>
+        <button class="provider-btn" data-wallet="walletconnect">
+          <img src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/Blue%20(Default)/Icon.svg" alt="WalletConnect">
+          WalletConnect
+        </button>
+      </div>
+      <button id="close-wallet-modal-btn" class="skip-btn">Cancel</button>
+    </div>
+  </div>
+
+  <div id="dashboard-window" class="hidden-screen">
+    <div id="monad-title-bar">
+      <div class="app-header-left">
+        <span id="back-to-splash-btn" title="Return">❮</span>
+        <span class="glitch-title">MKR Web</span>
+      </div>
+      <div class="app-header-right">
+        <button id="header-wallet-btn">Connect Wallet</button>
+      </div>
+    </div>
+    
+    <div id="dashboard-content">
+      
+      <div class="portrait-section">
+        <h2 class="section-title">Natural Elements</h2>
+        <div class="grid-container" id="elements-grid"></div>
+      </div>
+
+      <div class="portrait-section">
+        <h2 class="section-title">Fundamental Rights</h2>
+        <div class="grid-container" id="rights-grid"></div>
+      </div>
+
+      <div class="portrait-section nft-section-wrapper">
+        <h2 class="section-title nft-title-glow">Exclusive Hybrid NFTs</h2>
+        <p class="nft-section-desc">Collect 3D Web3 assets and mint directly to your wallet on Monad.</p>
+        <div class="grid-container" id="nfts-grid"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="info-modal" class="modal-overlay hidden-modal">
+    <div class="modal-content info-content">
+      <span class="close-modal" id="close-info-modal">&times;</span>
+      <div class="modal-header">
+        <img id="modal-image" class="glowing-image-purple" src="" alt="Element Image">
+        <h2 id="modal-title">Title</h2>
+      </div>
+      <div class="modal-body">
+        <div class="info-section">
+          <h3>Description</h3>
+          <p id="modal-desc"></p>
+        </div>
+        <div class="info-section">
+          <h3 id="modal-sec1-title">Usage</h3>
+          <p id="modal-sec1-desc"></p>
+        </div>
+        <div class="info-section">
+          <h3 id="modal-sec2-title">Pollution / Issues</h3>
+          <p id="modal-sec2-desc"></p>
+        </div>
+        <div class="info-section">
+          <h3 id="modal-sec3-title">Preservation / Solutions</h3>
+          <p id="modal-sec3-desc"></p>
+        </div>
+        
+        <button id="ask-ai-btn" class="ai-button">Ask AI for deeper insights ✦</button>
+        <div id="ai-response-container" class="hidden-element"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="nft-modal" class="modal-overlay hidden-modal">
+    <div class="modal-content nft-marketplace-content">
+      <span class="close-modal" id="close-nft-modal">&times;</span>
+      
+      <div class="nft-showcase-portrait">
+        <div class="nft-image-wrapper glowing-image-green">
+          <div class="nft-badge">HYBRID ASSET</div>
+          <img id="dedicated-nft-image" src="" alt="NFT">
+        </div>
+        
+        <div class="nft-compact-details">
+          <div class="nft-title-row">
+            <h2 id="dedicated-nft-title">NFT Name</h2>
+            <h3 class="nft-price-compact" id="dedicated-nft-price">$0.00</h3>
+          </div>
+          
+          <div class="payment-controls-compact">
+            <select id="payment-token" class="token-selector-compact">
+              <option value="MON">MON</option>
+              <option value="USDT">USDT</option>
+              <option value="USDC">USDC</option>
+            </select>
+            <button id="buy-nft-btn" class="buy-btn-compact">Mint Asset</button>
+          </div>
+          <div id="tx-status" class="tx-status-text hidden-element">Initializing transaction...</div>
+          
+          <p class="nft-origin-compact" id="dedicated-nft-origin">Inspired by: </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
