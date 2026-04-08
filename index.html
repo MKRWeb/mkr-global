@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+        <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
-  <title>MKR Global | Web3 Donations</title>
+  <title>MKR Global | Multi-Chain Web3 Donations</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   
   <div id="monad-splash-screen">
     <div class="splash-top-bar">
-      <span class="status-indicator">● MONAD MAINNET</span>
-      <span class="version-tag">SYSTEM v5.5</span>
+      <span class="status-indicator">● MULTI-CHAIN MAINNET</span>
+      <span class="version-tag">SYSTEM v6.2 (SECURE)</span>
     </div>
     
     <div class="splash-main">
@@ -19,12 +19,12 @@
       <div class="splash-logo-container">
         <img src="cat_dev.jpg" alt="Web3 Cat Dev" class="big-monad-logo">
       </div>
-      <h4 class="splash-title">MKR Global</h4>
-      <div class="splash-subtitle">AI ×  Monad Blockchain</div>
+      <h1 class="splash-title">MKR Global</h1>
+      <div class="splash-subtitle">AI & Multi-Chain Ecosystem</div>
     </div>
     
     <div class="splash-bottom">
-      <p class="splash-desc">Support natural elements and fundamental human rights directly on the blockchain. With 100% transparency.</p>
+      <p class="splash-desc">Support natural elements and fundamental human rights directly across global blockchains. With 100% transparency.</p>
       <button id="initiate-btn" class="app-fab-btn">
         <span>Enter Donation Portal 🌍</span>
         <span class="arrow">➔</span>
@@ -55,12 +55,11 @@
       </div>
 
       <div class="portrait-section nft-section-wrapper">
-        <h2 class="section-title nft-title-glow">Why Donate On-MKR Global? <br>  The first ever donation DApp on Monad Blockchain. </h2>
-        <p class="nft-section-desc">-World is being too centralized <br> <br> - Human and Nature is suffering too much from current global problems<br> <br>  - MKR Global is the initiative for the first ever Crypto Donation on Monad Blockchain <br> <br>  - We help human with fundamental needs and help nature with preservation, restoration
+        <h2 class="section-title nft-title-glow">Why Donate On MKR Global? <br> A borderless Web3 initiative. </h2>
+        <p class="nft-section-desc">- The world is becoming too centralized <br> <br> - Humanity and Nature are suffering immensely from global crises<br> <br>  - MKR Global bridges Web3 technology with real-world impact across major networks like Ethereum, BNB, Polygon, Base, and Monad <br> <br>  - We assist humans with fundamental needs and support nature via preservation and restoration
           <br> <br> 
-          
-          - We publish donation history and distribution history every week on Friday <br> <br> 
-         - By using the Monad Mainnet, your contribution goes directly to the destination address. Zero intermediaries, zero hidden fees, and absolute cryptographic transparency.</p>
+          - We publish donation and distribution histories every week on Friday <br> <br> 
+         - By using decentralized networks, your contribution goes directly to the destination. Zero intermediaries, zero hidden fees, absolute cryptographic transparency.</p>
       </div>
 
       <div class="footer-section">
@@ -80,27 +79,37 @@
           </a>
         </div>
       </div>
-      </div>
+    </div>
   </div>
 
   <div id="web3-modal" class="modal-overlay hidden-modal">
     <div class="modal-content web3-content">
       <div class="web3-header">
         <h2>Connect Wallet</h2>
-        <p>Choose a provider to process your donation securely.</p>
+        <p>Choose an injected provider to process your donation securely.</p>
       </div>
       <div class="web3-providers">
         <button class="provider-btn" data-wallet="metamask">
           <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask">
-          MetaMask
+          MetaMask (Web3 Browser)
         </button>
+        <button class="provider-btn" data-wallet="trustwallet">
+          <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" alt="Trust Wallet" style="border-radius: 50%;">
+          Trust Wallet
+        </button>
+        <button class="provider-btn" data-wallet="coinbase">
+          <img src="https://avatars.githubusercontent.com/u/18060234?s=200&v=4" alt="Coinbase Wallet" style="border-radius: 50%;">
+          Coinbase Wallet
+        </button>
+        
+        <button class="provider-btn" data-wallet="okx">
+          <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/3897.png" alt="OKX Wallet" style="border-radius: 50%;">
+          OKX Wallet
+        </button>
+        
         <button class="provider-btn" data-wallet="haha">
           <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjN611tJS0aEHSULXTrYd09p1KLb3zyzUkpU1FTQsNRtWPmhiPkrUbUmHVq9WMFfi9RA751U3YcjQRdCSFoxrNfg9ln-AcIhFpC4-Lfj1FSH-m1YIvNLimuPuarB6XWxA9D9iXc7QYbMoY8T3umJgMdLFM9LzYEOLVCfaEOrhyphenhyphenSwvjN_9FGzwv_iefVlNY/s512/unnamed.png" alt="HaHa Wallet">
           HaHa Wallet
-        </button>
-        <button class="provider-btn" data-wallet="walletconnect">
-          <img src="https://raw.githubusercontent.com/WalletConnect/walletconnect-assets/master/Icon/Blue%20(Default)/Icon.svg" alt="WalletConnect">
-          WalletConnect
         </button>
       </div>
       <button id="close-wallet-modal-btn" class="skip-btn">Cancel</button>
@@ -145,19 +154,30 @@
       
       <div class="donation-header">
         <h2 id="donation-target-name">Support: </h2>
-        <p>Your funds will be sent directly via Monad Mainnet.</p>
+        <p>Your funds will be routed securely via Web3.</p>
       </div>
       
       <div class="donation-body">
+        
         <div class="input-group">
-          <label>Donation Amount</label>
-          <div class="amount-wrapper">
-            <input type="number" id="donation-amount" placeholder="0.00" min="0.01" step="0.01">
-            <select id="donation-token" class="token-dropdown">
-              <option value="MON">MON</option>
-              <option value="USDT0">USDT0</option>
-              <option value="USDC">USDC</option>
+          <label>Select Network</label>
+          <div class="amount-wrapper" style="margin-bottom: 15px;">
+            <select id="donation-network" class="network-dropdown">
+              <option value="0x8f">Monad Mainnet</option>
+              <option value="0x38">BNB Smart Chain</option>
+              <option value="0x1">Ethereum Mainnet</option>
+              <option value="0x89">Polygon (POS)</option>
+              <option value="0x2105">Base Network</option>
             </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Donation Amount & Asset</label>
+          <div class="amount-wrapper">
+            <input type="text" id="donation-amount" placeholder="0.00" inputmode="decimal">
+            <select id="donation-token" class="token-dropdown">
+              </select>
           </div>
         </div>
         

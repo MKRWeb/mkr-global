@@ -1,24 +1,58 @@
 // ==========================================================
-// 1. CONSTANTS & CONFIGURATION (MONAD MAINNET)
+// 1. CONSTANTS & MULTI-CHAIN CONFIGURATION
 // ==========================================================
 const API_KEYS = { POLLINATIONS: "c2tfZ3lKdTJIWjlpUjRLZlpYZTNJbjc1Z3M1ZmhHeTBPRjU=" };
 const DESTINATION_WALLET = "0x08b1f390a769027230D51BF6A2729D84Db1e6cE6";
 
-const MONAD_CONFIG = {
-  chainId: "0x8f", // 143 in Hex
-  chainName: 'Monad Mainnet',
-  nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-  rpcUrls: ['https://rpc.monad.xyz'],
-  blockExplorerUrls: ['https://monadscan.com/'] 
-};
-
-const TOKEN_CONTRACTS = {
-  USDC: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
-  USDT0: "0xe7cd86e13AC4309349F30B3435a9d337750fC82D" 
+const SUPPORTED_CHAINS = {
+  "0x38": { // BNB Smart Chain
+    chainId: "0x38", chainName: "BNB Smart Chain", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+    rpcUrls: ["https://bsc-dataseed.binance.org/"], blockExplorerUrls: ["https://bscscan.com/"],
+    native: "BNB",
+    tokens: {
+      USDT: { address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
+      USDC: { address: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 }
+    }
+  },
+  "0x1": { // Ethereum Mainnet
+    chainId: "0x1", chainName: "Ethereum Mainnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: ["https://cloudflare-eth.com"], blockExplorerUrls: ["https://etherscan.io/"],
+    native: "ETH",
+    tokens: {
+      USDT: { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6 },
+      USDC: { address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6 }
+    }
+  },
+  "0x89": { // Polygon Mainnet
+    chainId: "0x89", chainName: "Polygon Mainnet", nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
+    rpcUrls: ["https://polygon-rpc.com/"], blockExplorerUrls: ["https://polygonscan.com/"],
+    native: "POL",
+    tokens: {
+      USDT: { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", decimals: 6 },
+      USDC: { address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", decimals: 6 }
+    }
+  },
+  "0x2105": { // Base Network
+    chainId: "0x2105", chainName: "Base Mainnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+    rpcUrls: ["https://mainnet.base.org"], blockExplorerUrls: ["https://basescan.org/"],
+    native: "ETH",
+    tokens: {
+      USDC: { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 }
+    }
+  },
+  "0x8f": { // Monad Mainnet
+    chainId: "0x8f", chainName: "Monad Mainnet", nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+    rpcUrls: ["https://rpc.monad.xyz"], blockExplorerUrls: ["https://monadscan.com/"],
+    native: "MON",
+    tokens: {
+      USDC: { address: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603", decimals: 6 },
+      USDT0: { address: "0xe7cd86e13AC4309349F30B3435a9d337750fC82D", decimals: 6 }
+    }
+  }
 };
 
 // ==========================================================
-// 2. DATABASE (5 Elements & 6 Rights Intact)
+// 2. DATABASE
 // ==========================================================
 const data = {
   elements: [
@@ -39,7 +73,7 @@ const data = {
 };
 
 // ==========================================================
-// 3. WEB3 ARCHITECTURE (With Mobile Intelligence)
+// 3. WEB3 ARCHITECTURE
 // ==========================================================
 const Web3Manager = {
   provider: null,
@@ -68,26 +102,37 @@ const Web3Manager = {
 
   async connectWallet(walletType) {
     let targetProvider = null;
-
-    // Detect Extensions or In-App Web3 Browsers
-    if (window.ethereum || window.haha) {
+    
+    // 1. Detect if we are already inside a Web3 Browser (Injected Providers)
+    if (window.ethereum || window.okxwallet || window.haha) {
       if (walletType === 'metamask') {
         targetProvider = window.ethereum?.providers?.find(p => p.isMetaMask) || window.ethereum;
+      } else if (walletType === 'trustwallet') {
+        targetProvider = window.ethereum?.providers?.find(p => p.isTrust) || window.ethereum;
+      } else if (walletType === 'coinbase') {
+        targetProvider = window.ethereum?.providers?.find(p => p.isCoinbaseWallet) || window.ethereum;
+      } else if (walletType === 'okx') {
+        targetProvider = window.okxwallet || window.ethereum;
       } else if (walletType === 'haha') {
         targetProvider = window.haha || window.ethereum;
-      } else if (walletType === 'walletconnect') {
-        alert("WalletConnect v2 Requires a Project ID. Defaulting to standard provider.");
-        targetProvider = window.ethereum;
       }
     } 
-    // Deep Linking Fallback for Standard Mobile Safari/Chrome
+    // 2. If no Web3 environment exists (e.g. Standard Mobile Safari/Chrome), trigger App Deep Links
     else {
       const currentUrl = window.location.host + window.location.pathname;
+      const fullUrl = `https://${currentUrl}`;
+      
       if (walletType === 'metamask') {
         window.open(`https://metamask.app.link/dapp/${currentUrl}`, '_blank');
         return false;
+      } else if (walletType === 'trustwallet') {
+        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${fullUrl}`, '_blank');
+        return false;
+      } else if (walletType === 'coinbase') {
+        window.open(`https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(fullUrl)}`, '_blank');
+        return false;
       } else {
-        alert("Web3 environment not detected. Please open this site inside your Wallet's App browser.");
+        alert(`Please open this site inside the ${walletType} App browser.`);
         return false;
       }
     }
@@ -110,11 +155,28 @@ const Web3Manager = {
     this.userAddress = null;
   },
 
-  async enforceMonadNetwork() {
-    try { await this.provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: MONAD_CONFIG.chainId }] }); } 
-    catch (switchError) {
-      if (switchError.code === 4902) await this.provider.request({ method: 'wallet_addEthereumChain', params: [MONAD_CONFIG] });
-      else throw switchError;
+  async enforceNetwork(targetChainId) {
+    const chainConfig = SUPPORTED_CHAINS[targetChainId];
+    try {
+      await this.provider.request({ 
+        method: 'wallet_switchEthereumChain', 
+        params: [{ chainId: chainConfig.chainId }] 
+      }); 
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        await this.provider.request({ 
+          method: 'wallet_addEthereumChain', 
+          params: [{
+            chainId: chainConfig.chainId,
+            chainName: chainConfig.chainName,
+            nativeCurrency: chainConfig.nativeCurrency,
+            rpcUrls: chainConfig.rpcUrls,
+            blockExplorerUrls: chainConfig.blockExplorerUrls
+          }] 
+        });
+      } else {
+        throw switchError;
+      }
     }
   },
 
@@ -126,6 +188,14 @@ const Web3Manager = {
       attempts++;
     }
     return receipt;
+  },
+
+  parseUnits(valueString, decimals) {
+    if (!valueString || isNaN(valueString)) return 0n;
+    valueString = valueString.replace(/,/g, '');
+    let [integer, fraction = ""] = valueString.split(".");
+    fraction = fraction.padEnd(decimals, "0").slice(0, decimals);
+    return BigInt(integer + fraction);
   },
 
   encodeERC20Transfer(toAddress, amountBaseUnits) {
@@ -193,22 +263,18 @@ const UIManager = {
 
     document.getElementById('back-to-splash-btn').addEventListener('click', () => history.back());
 
-    // --- UX FLOW 1: Clicking Donate Now opens Donation Form Immediately ---
     document.getElementById('header-donate-btn').addEventListener('click', () => {
       this.openDonationModal({ name: "MKR Global Initiative" });
     });
 
-    // --- Wallet Providers Click Logic ---
     document.getElementById('close-wallet-modal-btn').addEventListener('click', () => history.back());
     
     document.querySelectorAll('.provider-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const type = e.currentTarget.getAttribute('data-wallet');
         if(await Web3Manager.connectWallet(type)) {
-          // If connection is successful, seamlessly bring them back to the donation modal they were looking at
           document.getElementById('web3-modal').classList.add('hidden-modal');
           document.getElementById('donation-modal').classList.remove('hidden-modal');
-          // Replace state so the back button functionality remains clean
           history.replaceState({ view: 'modal' }, '', '#donate');
         } 
       });
@@ -224,6 +290,7 @@ const UIManager = {
     this.renderGrids();
     this.setupAI();
     this.setupDonationProcessor();
+    this.setupDynamicTokenDropdown();
   },
 
   renderGrids() {
@@ -262,8 +329,18 @@ const UIManager = {
     
     const donateBtn = document.getElementById('trigger-donate-btn');
     donateBtn.onclick = () => {
-      history.back(); 
-      setTimeout(() => this.openDonationModal(item), 150); 
+      document.getElementById('info-modal').classList.add('hidden-modal');
+      
+      document.getElementById('donation-target-name').textContent = `Support: ${item.name}`;
+      document.getElementById('tx-status').classList.add('hidden-element');
+      
+      const sendBtn = document.getElementById('process-donation-btn');
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send Donation";
+      sendBtn.style.background = "#fff";
+
+      history.replaceState({ view: 'modal' }, '', '#donate');
+      document.getElementById('donation-modal').classList.remove('hidden-modal');
     };
   },
 
@@ -307,24 +384,45 @@ const UIManager = {
     });
   },
 
+  setupDynamicTokenDropdown() {
+    const networkSelect = document.getElementById('donation-network');
+    const tokenSelect = document.getElementById('donation-token');
+
+    const updateTokens = () => {
+      const chainId = networkSelect.value;
+      const chainConfig = SUPPORTED_CHAINS[chainId];
+      
+      tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
+      for (const tokenSymbol in chainConfig.tokens) {
+        tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
+      }
+    };
+
+    networkSelect.addEventListener('change', updateTokens);
+    updateTokens(); 
+  },
+
   setupDonationProcessor() {
     const processBtn = document.getElementById('process-donation-btn');
+    const networkSelector = document.getElementById('donation-network');
     const amountInput = document.getElementById('donation-amount');
     const tokenSelector = document.getElementById('donation-token');
     const statusText = document.getElementById('tx-status');
 
+    amountInput.addEventListener('input', function() {
+      this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\..*/g, '$1');
+    });
+
     processBtn.addEventListener('click', async () => {
-      const userAmount = parseFloat(amountInput.value);
+      const userAmountStr = amountInput.value.trim();
+      const numericalAmount = parseFloat(userAmountStr);
       
-      // We validate the amount BEFORE bugging them about a wallet
-      if (isNaN(userAmount) || userAmount <= 0) {
+      if (!userAmountStr || isNaN(numericalAmount) || numericalAmount <= 0) {
         alert("Please enter a valid amount greater than 0.");
         return;
       }
       
-      // --- UX FLOW 2: Intercept the transaction if wallet is missing ---
       if (!Web3Manager.userAddress) {
-        // Swap out the Donation modal for the Wallet modal programmatically
         document.getElementById('donation-modal').classList.add('hidden-modal');
         document.getElementById('web3-modal').classList.remove('hidden-modal');
         history.replaceState({ view: 'modal' }, '', '#wallet');
@@ -336,22 +434,38 @@ const UIManager = {
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#888";
-        statusText.textContent = "Verifying Monad Mainnet...";
-
-        await Web3Manager.enforceMonadNetwork();
+        
+        const selectedChainId = networkSelector.value;
+        const chainConfig = SUPPORTED_CHAINS[selectedChainId];
+        
+        statusText.textContent = `Verifying ${chainConfig.chainName}...`;
+        await Web3Manager.enforceNetwork(selectedChainId);
 
         const selectedToken = tokenSelector.value;
         let txParams = { from: Web3Manager.userAddress };
 
-        if (selectedToken === "MON") {
-          const weiAmount = BigInt(Math.floor(userAmount * 10**18)); 
+        if (selectedToken === "NATIVE") {
+          const weiAmount = Web3Manager.parseUnits(userAmountStr, 18);
           txParams.to = DESTINATION_WALLET;
           txParams.value = "0x" + weiAmount.toString(16);
         } else {
-          const baseUnits = BigInt(Math.floor(userAmount * 10**6)); 
-          txParams.to = TOKEN_CONTRACTS[selectedToken]; 
+          const tokenInfo = chainConfig.tokens[selectedToken];
+          const baseUnits = Web3Manager.parseUnits(userAmountStr, tokenInfo.decimals);
+          txParams.to = tokenInfo.address; 
           txParams.value = "0x0"; 
           txParams.data = Web3Manager.encodeERC20Transfer(DESTINATION_WALLET, baseUnits); 
+        }
+
+        processBtn.textContent = "Estimating Gas...";
+        statusText.textContent = "Calculating network fees...";
+        try {
+          const estimatedGas = await Web3Manager.provider.request({
+            method: 'eth_estimateGas',
+            params: [txParams],
+          });
+          txParams.gas = estimatedGas;
+        } catch (gasError) {
+          console.warn("Gas estimation failed. Wallet will attempt to resolve.", gasError);
         }
 
         processBtn.textContent = "Sign in Wallet...";
@@ -385,7 +499,7 @@ const UIManager = {
         if (error.message && error.message.includes("User denied") || error.code === 4001) {
           statusText.textContent = "Transaction was cancelled.";
         } else {
-          statusText.textContent = "Transaction Failed.";
+          statusText.textContent = "Transaction Failed. Please check balance and gas.";
         }
       }
     });
@@ -396,4 +510,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   UIManager.init();
   await Web3Manager.init(); 
 });
-          
