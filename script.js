@@ -87,6 +87,7 @@ const Web3Manager = {
         if (accounts.length > 0) {
           this.userAddress = accounts[0];
           this.setupListeners();
+          UIManager.updateWalletUI();
         }
       } catch (err) { console.warn("Silent connection check failed"); }
     }
@@ -96,7 +97,10 @@ const Web3Manager = {
     if (!this.provider || !this.provider.on) return;
     this.provider.on('accountsChanged', (accounts) => {
       if (accounts.length === 0) this.disconnect();
-      else this.userAddress = accounts[0];
+      else {
+        this.userAddress = accounts[0];
+        UIManager.updateWalletUI();
+      }
     });
     this.provider.on('chainChanged', () => window.location.reload());
   },
@@ -142,6 +146,7 @@ const Web3Manager = {
       const accounts = await this.provider.request({ method: 'eth_requestAccounts' });
       this.userAddress = accounts[0];
       this.setupListeners();
+      UIManager.updateWalletUI();
       return true;
     } catch (error) { 
       console.error("Connection rejected", error); 
@@ -151,12 +156,11 @@ const Web3Manager = {
 
   disconnect() {
     this.userAddress = null;
+    UIManager.updateWalletUI();
   },
 
   async enforceNetwork(targetChainId) {
     const chainConfig = SUPPORTED_CHAINS[targetChainId];
-    
-    // Check if we are already on the target network to avoid prompting the user pointlessly
     try {
       const currentChainId = await this.provider.request({ method: 'eth_chainId' });
       if (currentChainId.toLowerCase() === chainConfig.chainId.toLowerCase()) return;
@@ -244,6 +248,20 @@ const UIManager = {
     document.getElementById('donation-modal').classList.add('hidden-modal');
   },
 
+  updateWalletUI() {
+    const connectedGroup = document.getElementById('wallet-connected-group');
+    const addressDisplay = document.getElementById('wallet-address-display');
+
+    if (Web3Manager.userAddress) {
+      connectedGroup.classList.remove('hidden-element');
+      const addr = Web3Manager.userAddress;
+      addressDisplay.textContent = addr.substring(0, 6) + "..." + addr.substring(addr.length - 4);
+    } else {
+      connectedGroup.classList.add('hidden-element');
+      addressDisplay.textContent = "";
+    }
+  },
+
   init() {
     const currentHash = window.location.hash;
     
@@ -272,6 +290,10 @@ const UIManager = {
 
     document.getElementById('header-donate-btn').addEventListener('click', () => {
       this.openDonationModal({ name: "MKR Global Initiative" });
+    });
+
+    document.getElementById('disconnect-wallet-btn').addEventListener('click', () => {
+      Web3Manager.disconnect();
     });
 
     document.getElementById('close-wallet-modal-btn').addEventListener('click', () => history.back());
@@ -459,12 +481,9 @@ const UIManager = {
           const tokenInfo = chainConfig.tokens[selectedToken];
           const baseUnits = Web3Manager.parseUnits(userAmountStr, tokenInfo.decimals);
           txParams.to = tokenInfo.address; 
-          // Removed manual value assigning for ERC20. Smart contracts prefer it excluded rather than '0x0'
           txParams.data = Web3Manager.encodeERC20Transfer(DESTINATION_WALLET, baseUnits); 
         }
 
-        // DELIBERATELY OMITTED manual 'eth_estimateGas'. 
-        // The wallet UI seamlessly performs the simulation natively when you trigger eth_sendTransaction. 
         processBtn.textContent = "Sign in Wallet...";
         statusText.style.color = "#00ffaa";
         statusText.textContent = "Please sign the transaction in your wallet.";
