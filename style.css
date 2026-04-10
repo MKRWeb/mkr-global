@@ -42,7 +42,7 @@ body, html {
 .app-fab-btn:active { transform: scale(0.95); background: #ab8eff; }
 
 /* --- DASHBOARD WINDOW --- */
-.hidden-screen { opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.5s ease; position: absolute; }
+.hidden-screen { opacity: 0 !important; pointer-events: none !important; transform: translateY(20px); transition: 0.5s ease; position: absolute; }
 .active-screen { opacity: 1 !important; pointer-events: all !important; transform: translateY(0) !important; position: relative; width: 100%; height: 100dvh; display: flex; flex-direction: column; }
 #dashboard-window { background: var(--app-bg); }
 #monad-title-bar { background: var(--app-surface); padding: 16px 20px; padding-top: calc(16px + env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; border-bottom: var(--app-border); }
@@ -50,10 +50,17 @@ body, html {
 #back-to-splash-btn { cursor: pointer; font-size: 18px; color: var(--app-primary); padding: 5px; }
 #dashboard-content { flex: 1; overflow-y: auto; padding-bottom: calc(50px + env(safe-area-inset-bottom)); overflow-x: hidden; }
 
-/* HEADER BUTTON */
+/* HEADER BUTTONS & WALLET UX */
+.header-controls { display: flex; align-items: center; gap: 10px; }
+#wallet-connected-group { display: flex; align-items: center; gap: 10px; }
+.wallet-badge { background: rgba(141, 107, 255, 0.1); border: 1px solid rgba(141, 107, 255, 0.3); padding: 7px 12px; border-radius: 8px; font-family: var(--terminal-font); font-size: 13px; color: #e0e0e0; }
+
 .header-action-btn { background: #00ffaa; border: none; color: #000; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: var(--terminal-font); transition: 0.2s; text-align: center; box-shadow: 0 0 10px rgba(0, 255, 170, 0.4); }
 .header-action-btn:hover { background: #00e699; box-shadow: 0 0 15px rgba(0, 255, 170, 0.6); }
 .header-action-btn:active { transform: scale(0.95); }
+
+.disconnect-btn { background: #332d4a; color: #fff; box-shadow: none; }
+.disconnect-btn:hover { background: #ff5555; color: #fff; box-shadow: 0 0 10px rgba(255, 85, 85, 0.4); }
 
 /* --- GRIDS & CARDS --- */
 .portrait-section { margin: 20px 15px 30px 15px; padding: 20px 0; background: rgba(20, 18, 28, 0.4); border-radius: 16px; border: 1px solid rgba(141, 107, 255, 0.2); animation: breatheGlowPurple 4s infinite alternate ease-in-out; }
@@ -131,4 +138,4 @@ body, html {
 
 .social-icon:hover { color: #00ffaa; border-color: rgba(0, 255, 170, 0.5) !important; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3) !important; transform: translateY(-3px); animation-play-state: paused; }
 .social-icon:active { transform: translateY(0) scale(0.95); }
-                
+               
