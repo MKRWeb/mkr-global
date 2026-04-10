@@ -29,7 +29,6 @@ body, html {
 .splash-top-bar { display: flex; justify-content: flex-start; width: 100%; color: #6b6485; font-family: var(--terminal-font); font-size: 13px; font-weight: bold; letter-spacing: 1px; }
 .status-indicator { color: #00ffaa; animation: blinkText 2s infinite; }
 
-/* SYSTEM v6.1 Adjusted to absolute top right corner */
 .version-tag { position: absolute; top: 20px; right: 20px; z-index: 101; text-align: right; color: #6b6485; font-family: var(--terminal-font); font-size: 13px; font-weight: bold; letter-spacing: 1px;}
 
 .splash-main { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; }
@@ -73,7 +72,6 @@ body, html {
 .modal-content { background: var(--app-surface); width: 90%; max-width: 600px; max-height: 85vh; border-radius: 16px; border: 1px solid var(--app-primary); position: relative; display: flex; flex-direction: column; overflow-y: auto; }
 .close-modal { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: #fff; background: rgba(0,0,0,0.5); border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; z-index: 10; }
 
-/* 3-Button Web3 Modal */
 .web3-content { max-width: 400px; padding: 30px; text-align: center; }
 .web3-header h2 { color: #fff; margin-bottom: 10px; }
 .web3-header p { color: #888; font-size: 14px; margin-bottom: 30px; }
@@ -82,7 +80,6 @@ body, html {
 .provider-btn:hover { background: #252236; border-color: var(--app-primary); box-shadow: 0 0 10px rgba(141, 107, 255, 0.2); }
 .skip-btn { background: transparent; border: none; color: #6b6485; text-decoration: underline; cursor: pointer; margin-top: 10px; font-family: var(--terminal-font); padding: 10px;}
 
-/* Educational Info Modal */
 .modal-header img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-top-left-radius: 16px; border-top-right-radius: 16px;}
 .modal-header h2 { padding: 20px; margin: 0; font-size: 28px; color: var(--app-primary); text-transform: uppercase; letter-spacing: 2px; border-bottom: var(--app-border); }
 .modal-body { padding: 20px; }
@@ -134,3 +131,4 @@ body, html {
 
 .social-icon:hover { color: #00ffaa; border-color: rgba(0, 255, 170, 0.5) !important; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3) !important; transform: translateY(-3px); animation-play-state: paused; }
 .social-icon:active { transform: translateY(0) scale(0.95); }
+                
