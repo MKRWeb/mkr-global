@@ -251,13 +251,19 @@ const UIManager = {
   updateWalletUI() {
     const connectedGroup = document.getElementById('wallet-connected-group');
     const addressDisplay = document.getElementById('wallet-address-display');
+    const donateBtn = document.getElementById('header-donate-btn');
 
     if (Web3Manager.userAddress) {
+      // Wallet connected: Show address/disconnect, hide header donate button
       connectedGroup.classList.remove('hidden-element');
+      if (donateBtn) donateBtn.classList.add('hidden-element');
+      
       const addr = Web3Manager.userAddress;
       addressDisplay.textContent = addr.substring(0, 6) + "..." + addr.substring(addr.length - 4);
     } else {
+      // Wallet disconnected: Hide address/disconnect, show header donate button
       connectedGroup.classList.add('hidden-element');
+      if (donateBtn) donateBtn.classList.remove('hidden-element');
       addressDisplay.textContent = "";
     }
   },
@@ -526,3 +532,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   UIManager.init();
   await Web3Manager.init(); 
 });
+    
