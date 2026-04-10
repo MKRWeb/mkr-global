@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
-  <title>MKR Global | Web3 Donations</title>
+  <title>MKR Global | Multi-Chain Web3 Donations</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,7 +38,11 @@
         <span id="back-to-splash-btn" title="Return">❮</span>
         <span class="glitch-title">MKR Global</span>
       </div>
-      <div class="app-header-right">
+      <div class="app-header-right header-controls">
+        <div id="wallet-connected-group" class="hidden-element">
+          <span id="wallet-address-display" class="wallet-badge"></span>
+          <button id="disconnect-wallet-btn" class="header-action-btn disconnect-btn">Disconnect</button>
+        </div>
         <button id="header-donate-btn" class="header-action-btn">Donate Now</button>
       </div>
     </div>
