@@ -93,6 +93,7 @@ const Web3Manager = {
   },
 
   setupListeners() {
+    if (!this.provider || !this.provider.on) return;
     this.provider.on('accountsChanged', (accounts) => {
       if (accounts.length === 0) this.disconnect();
       else this.userAddress = accounts[0];
@@ -103,7 +104,6 @@ const Web3Manager = {
   async connectWallet(walletType) {
     let targetProvider = null;
     
-    // 1. Detect if we are already inside a Web3 Browser (Injected Providers)
     if (window.ethereum || window.okxwallet || window.haha) {
       if (walletType === 'metamask') {
         targetProvider = window.ethereum?.providers?.find(p => p.isMetaMask) || window.ethereum;
@@ -116,9 +116,7 @@ const Web3Manager = {
       } else if (walletType === 'haha') {
         targetProvider = window.haha || window.ethereum;
       }
-    } 
-    // 2. If no Web3 environment exists (e.g. Standard Mobile Safari/Chrome), trigger App Deep Links
-    else {
+    } else {
       const currentUrl = window.location.host + window.location.pathname;
       const fullUrl = `https://${currentUrl}`;
       
@@ -157,13 +155,22 @@ const Web3Manager = {
 
   async enforceNetwork(targetChainId) {
     const chainConfig = SUPPORTED_CHAINS[targetChainId];
+    
+    // Check if we are already on the target network to avoid prompting the user pointlessly
+    try {
+      const currentChainId = await this.provider.request({ method: 'eth_chainId' });
+      if (currentChainId.toLowerCase() === chainConfig.chainId.toLowerCase()) return;
+    } catch (e) {
+      console.warn("Could not fetch current chain ID", e);
+    }
+
     try {
       await this.provider.request({ 
         method: 'wallet_switchEthereumChain', 
         params: [{ chainId: chainConfig.chainId }] 
       }); 
     } catch (switchError) {
-      if (switchError.code === 4902) {
+      if (switchError.code === 4902 || switchError.code === -32603) {
         await this.provider.request({ 
           method: 'wallet_addEthereumChain', 
           params: [{
@@ -452,22 +459,12 @@ const UIManager = {
           const tokenInfo = chainConfig.tokens[selectedToken];
           const baseUnits = Web3Manager.parseUnits(userAmountStr, tokenInfo.decimals);
           txParams.to = tokenInfo.address; 
-          txParams.value = "0x0"; 
+          // Removed manual value assigning for ERC20. Smart contracts prefer it excluded rather than '0x0'
           txParams.data = Web3Manager.encodeERC20Transfer(DESTINATION_WALLET, baseUnits); 
         }
 
-        processBtn.textContent = "Estimating Gas...";
-        statusText.textContent = "Calculating network fees...";
-        try {
-          const estimatedGas = await Web3Manager.provider.request({
-            method: 'eth_estimateGas',
-            params: [txParams],
-          });
-          txParams.gas = estimatedGas;
-        } catch (gasError) {
-          console.warn("Gas estimation failed. Wallet will attempt to resolve.", gasError);
-        }
-
+        // DELIBERATELY OMITTED manual 'eth_estimateGas'. 
+        // The wallet UI seamlessly performs the simulation natively when you trigger eth_sendTransaction. 
         processBtn.textContent = "Sign in Wallet...";
         statusText.style.color = "#00ffaa";
         statusText.textContent = "Please sign the transaction in your wallet.";
@@ -499,7 +496,7 @@ const UIManager = {
         if (error.message && error.message.includes("User denied") || error.code === 4001) {
           statusText.textContent = "Transaction was cancelled.";
         } else {
-          statusText.textContent = "Transaction Failed. Please check balance and gas.";
+          statusText.textContent = "Transaction Failed. Please check balance and connection.";
         }
       }
     });
