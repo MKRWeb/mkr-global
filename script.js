@@ -70,12 +70,63 @@ const data = {
 };
 
 // ==========================================================
+// 2.5 ARTICLE CONTENT DATABASE
+// ==========================================================
+const articleData = {
+  nature: {
+    tag: "Regenerative Finance (ReFi)",
+    title: "Restoring Nature: The Web3 Blueprint for Earth",
+    img: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80",
+    content: `
+      <p>For decades, environmental preservation has been hindered by opaque supply chains, inefficient funding, and a lack of global coordination. <span class="highlight-text">MKR Global</span> is changing this narrative by leveraging decentralized technology to create a transparent, borderless blueprint for restoring our planet.</p>
+      
+      <h2>The Tokenization of Impact</h2>
+      <p>Imagine a world where every tree planted, every gallon of water purified, and every acre of soil restored is permanently recorded on a public, immutable ledger. Through ReFi (Regenerative Finance), we are moving beyond simply "doing less harm" to actively incentivizing ecological restoration at scale.</p>
+      
+      <blockquote>"We cannot solve our crises with the same economic systems that created them. We must build economies that explicitly value the living world."</blockquote>
+      
+      <h2>How Your Contribution Heals</h2>
+      <p>When you donate via networks like Monad, Base, or Polygon, your funds bypass bureaucratic bottlenecks. Smart contracts ensure that capital flows directly to verified conservationists and ecological stewards on the ground. We are currently funding:</p>
+      <ul>
+         <li><b>Soil Regeneration:</b> Supporting organic farming practices that sequester carbon back into the earth.</li>
+         <li><b>Water Purification:</b> Deploying decentralized infrastructure to communities lacking access to clean aquifers.</li>
+         <li><b>Forest Defense:</b> Utilizing satellite data and on-chain verification to protect ancient woodlands from illegal logging.</li>
+      </ul>
+      <p>By participating in this ecosystem, you aren't just making a donation; you are investing in the very foundation of biological life.</p>
+    `
+  },
+  humanity: {
+    tag: "Borderless Human Rights",
+    title: "Empowering Humanity: Unlocking Universal Dignity",
+    img: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80",
+    content: `
+      <p>In a hyper-connected world, arbitrary geographic borders should not dictate a person's access to basic human rights. Through cryptography and decentralized networks, we are pioneering a new era of <span class="highlight-text">borderless humanitarian aid</span>.</p>
+      
+      <h2>Censorship-Resistant Funding</h2>
+      <p>Traditional financial systems can easily be weaponized, shutting out vulnerable populations, activists, and grassroots organizers. Cryptocurrency fundamentally changes this paradigm. A transaction sent on the blockchain cannot be intercepted, censored, or frozen by corrupt authorities.</p>
+      
+      <blockquote>"True empowerment begins when financial sovereignty is recognized as a fundamental human right, accessible to anyone with an internet connection."</blockquote>
+      
+      <h2>Focus Areas for Human Advancement</h2>
+      <p>Your support flows seamlessly across global borders to fuel initiatives that elevate the human condition:</p>
+      <ul>
+         <li><b>Web3 Education:</b> Providing devices and decentralized learning platforms to bridge the global digital divide.</li>
+         <li><b>Global Healthcare:</b> Funding decentralized autonomous organizations (DAOs) that provide open-source medical supplies and telehealth access.</li>
+         <li><b>Shelter & Security:</b> Supporting community-owned housing trusts that resist predatory lending practices.</li>
+      </ul>
+      <p>Together, we are stripping away the heavy inefficiencies of legacy philanthropy and replacing them with a system built on cryptographic truth, lightning speed, and unyielding global solidarity.</p>
+    `
+  }
+};
+
+// ==========================================================
 // 3. WEB3 ARCHITECTURE (SECURE & HARDENED)
 // ==========================================================
 const Web3Manager = {
   provider: null,
   userAddress: null,
-  isProcessingTx: false, // NEW CRITICAL FIX: Lock flag for preventing random reloads
+  isProcessingTx: false,
+  hasListeners: false, // Prevents duplicate event listeners (Fix 1)
 
   async init() {
     if (window.ethereum) {
@@ -92,7 +143,11 @@ const Web3Manager = {
   },
 
   setupListeners() {
-    if (!this.provider || !this.provider.on) return;
+    // Only attach listeners once to prevent memory leaks and UI glitches
+    if (!this.provider || !this.provider.on || this.hasListeners) return;
+    
+    this.hasListeners = true;
+
     this.provider.on('accountsChanged', (accounts) => {
       if (!accounts || accounts.length === 0) this.disconnect();
       else {
@@ -101,7 +156,6 @@ const Web3Manager = {
       }
     });
 
-    // NEW CRITICAL FIX: Only reload if the user manually switched networks outside of a transaction flow
     this.provider.on('chainChanged', () => {
       if (!this.isProcessingTx) {
         window.location.reload();
@@ -259,6 +313,7 @@ const UIManager = {
     document.getElementById('web3-modal').classList.add('hidden-modal');
     document.getElementById('info-modal').classList.add('hidden-modal');
     document.getElementById('donation-modal').classList.add('hidden-modal');
+    document.getElementById('article-modal').classList.add('hidden-modal');
   },
 
   updateWalletUI() {
@@ -282,7 +337,7 @@ const UIManager = {
   init() {
     const currentHash = window.location.hash;
     
-    if (currentHash === '#dashboard' || currentHash === '#info' || currentHash === '#donate' || currentHash === '#wallet') {
+    if (currentHash === '#dashboard' || currentHash === '#info' || currentHash === '#article' || currentHash === '#donate' || currentHash === '#wallet') {
       this.showDashboardUI();
       history.replaceState({ view: 'dashboard' }, '', '#dashboard');
     } else {
@@ -326,12 +381,26 @@ const UIManager = {
       });
     });
 
+    // Close button listeners for modals
     document.getElementById('close-info-modal').addEventListener('click', () => history.back());
     document.getElementById('close-donation-modal').addEventListener('click', () => history.back());
+    document.getElementById('close-article-modal').addEventListener('click', () => history.back());
 
+    // Click outside overlay to close
     document.querySelectorAll('.modal-overlay').forEach(modal => {
       modal.addEventListener('click', (e) => { if (e.target === modal) history.back(); });
     });
+
+    // Impact Card Listeners
+    const natureCard = document.getElementById('nature-impact-card');
+    if (natureCard) {
+      natureCard.addEventListener('click', () => this.openArticleModal('nature'));
+    }
+
+    const humanityCard = document.getElementById('humanity-impact-card');
+    if (humanityCard) {
+      humanityCard.addEventListener('click', () => this.openArticleModal('humanity'));
+    }
 
     document.getElementById('project-search').addEventListener('input', (e) => {
       this.searchQuery = e.target.value.toLowerCase();
@@ -415,6 +484,44 @@ const UIManager = {
     return div;
   },
 
+  openInfoModal(item, category) {
+    document.getElementById('modal-image').src = item.img;
+    document.getElementById('modal-image').alt = item.name;
+    document.getElementById('modal-title').textContent = item.name;
+    document.getElementById('modal-desc').textContent = item.desc;
+
+    if (category === 'nature') {
+      document.getElementById('modal-sec1-title').textContent = "Importance & Ecosystem";
+      document.getElementById('modal-sec1-desc').textContent = item.usage;
+      document.getElementById('modal-sec2-title').textContent = "Current Threats";
+      document.getElementById('modal-sec2-desc').textContent = item.pollution;
+      document.getElementById('modal-sec3-title').textContent = "Preservation Efforts";
+      document.getElementById('modal-sec3-desc').textContent = item.preservation;
+    } else {
+      document.getElementById('modal-sec1-title').textContent = "Human Impact";
+      document.getElementById('modal-sec1-desc').textContent = item.usage;
+      document.getElementById('modal-sec2-title').textContent = "Systemic Issues";
+      document.getElementById('modal-sec2-desc').textContent = item.pollution;
+      document.getElementById('modal-sec3-title').textContent = "Web3 Solutions";
+      document.getElementById('modal-sec3-desc').textContent = item.preservation;
+    }
+
+    history.pushState({ view: 'modal' }, '', '#info');
+    document.getElementById('info-modal').classList.remove('hidden-modal');
+  },
+
+  openArticleModal(articleKey) {
+    const article = articleData[articleKey];
+    
+    document.getElementById('article-hero-img').src = article.img;
+    document.getElementById('article-tag').textContent = article.tag;
+    document.getElementById('article-title').textContent = article.title;
+    document.getElementById('article-body').innerHTML = article.content;
+
+    history.pushState({ view: 'modal' }, '', '#article');
+    document.getElementById('article-modal').classList.remove('hidden-modal');
+  },
+
   openDonationModal(item) {
     document.getElementById('donation-target-name').textContent = `Support: ${item.name}`;
     document.getElementById('tx-status').classList.add('hidden-element');
@@ -422,7 +529,9 @@ const UIManager = {
     const sendBtn = document.getElementById('process-donation-btn');
     sendBtn.disabled = false;
     sendBtn.textContent = "Send Donation";
-    sendBtn.style.background = "#fff";
+    
+    // Fix 2: Reset inline styling so CSS disabled pseudo-class applies correctly
+    sendBtn.style.background = ""; 
 
     history.pushState({ view: 'modal' }, '', '#donate');
     document.getElementById('donation-modal').classList.remove('hidden-modal');
@@ -475,7 +584,7 @@ const UIManager = {
 
       try {
         processBtn.disabled = true;
-        Web3Manager.isProcessingTx = true; // NEW CRITICAL FIX: Lock the app state so it won't refresh
+        Web3Manager.isProcessingTx = true;
 
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
@@ -541,7 +650,7 @@ const UIManager = {
           statusText.textContent = "Transaction Failed. Please check balance and connection.";
         }
       } finally {
-        Web3Manager.isProcessingTx = false; // NEW CRITICAL FIX: Unlock the app state
+        Web3Manager.isProcessingTx = false;
       }
     });
   }
