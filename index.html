@@ -8,27 +8,46 @@
 </head>
 <body>
   
-  <div id="monad-splash-screen">
-    <div class="splash-top-bar">
-      <span class="status-indicator">● MULTI-CHAIN MAINNET</span>
-      <span class="version-tag">SYSTEM v6.2 (SECURE)</span>
+  <div id="monad-splash-screen" class="giveth-hero-section">
+    <div class="hero-top-nav">
+      <span class="glitch-title" style="font-size: 20px;">MKR Global</span>
+      <div class="hero-network-status">
+        <span class="status-indicator">●</span> Multi-Chain Mainnet
+      </div>
     </div>
     
-    <div class="splash-main">
-      <div class="glow-orb"></div>
+    <div class="hero-main-content">
+      <div class="hero-glow-bg"></div>
+      
       <div class="splash-logo-container">
         <img src="cat_dev.jpg" alt="Web3 Cat Dev" class="big-monad-logo">
       </div>
-      <h1 class="splash-title">MKR Global</h1>
-      <div class="splash-subtitle">AI & Multi-Chain Ecosystem</div>
-    </div>
-    
-    <div class="splash-bottom">
-      <p class="splash-desc">Support natural elements and fundamental human rights directly across global blockchains. With 100% transparency.</p>
-      <button id="initiate-btn" class="app-fab-btn">
-        <span>Enter Donation Portal 🌍</span>
-        <span class="arrow">➔</span>
-      </button>
+      
+      <div class="hero-text-wrapper">
+        <h1 class="hero-title">A borderless <span class="highlight-green">Web3</span> Initiative.</h1>
+        <p class="hero-subtitle">Support natural elements and fundamental human rights . With 100% cryptographic transparency.</p>
+        
+        <div class="hero-action-row">
+          <button id="initiate-btn" class="primary-hero-btn">Explore MKR Global ➔</button>
+        </div>
+      </div>
+
+      <div class="hero-stats-container">
+        <div class="stat-box">
+          <span class="stat-value">$10k+</span>
+          <span class="stat-label">Total Raised</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <span class="stat-value">11</span>
+          <span class="stat-label">Verified Causes</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <span class="stat-value">0%</span>
+          <span class="stat-label">Platform Fees</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -48,22 +67,52 @@
     </div>
     
     <div id="dashboard-content">
-      <div class="portrait-section">
-        <h2 class="section-title">Support Nature</h2>
-        <div class="grid-container" id="elements-grid"></div>
+      <div class="discovery-section">
+        <div class="search-bar-container">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="project-search" placeholder="Search causes, elements, or rights...">
+        </div>
+        <div class="category-tabs">
+          <button class="filter-tab active" data-filter="all">All Causes</button>
+          <button class="filter-tab" data-filter="nature">🌱 Nature</button>
+          <button class="filter-tab" data-filter="humanity">🤝 Humanity</button>
+        </div>
       </div>
 
-      <div class="portrait-section">
-        <h2 class="section-title">Support Humanity</h2>
-        <div class="grid-container" id="rights-grid"></div>
+      <div class="impact-gallery-container">
+        <div class="impact-card" style="animation-delay: 0.1s;">
+          <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80" alt="Restoring Nature">
+          <div class="impact-overlay">
+            <h3>🌱 Restoring Nature</h3>
+            <p>Healing the earth, one transaction at a time.</p>
+          </div>
+        </div>
+        <div class="impact-card" style="animation-delay: 0.2s;">
+          <img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=800&q=80" alt="Empowering Humanity">
+          <div class="impact-overlay">
+            <h3>🤝 Empowering Humanity</h3>
+            <p>Direct, borderless aid to those who need it most.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="portrait-section" style="margin-top: 10px;">
+        <h2 class="section-title" id="dynamic-section-title">Explore Verified Causes</h2>
+        <div class="grid-container" id="projects-grid">
+          </div>
       </div>
 
       <div class="portrait-section nft-section-wrapper">
-        <h2 class="section-title nft-title-glow">Why Donate On MKR Global? <br> A borderless Web3 initiative. </h2>
-        <p class="nft-section-desc">- The world is becoming too centralized <br> <br> - Humanity and Nature are suffering immensely from global crises<br> <br>  - MKR Global bridges Web3 technology with real-world impact across major networks like Ethereum, BNB, Polygon, Base, and Monad <br> <br>  - We assist humans with fundamental needs and support nature via preservation and restoration
+        <h2 class="section-title nft-title-glow">Why Donate On MKR Global? <br> A borderless Web3 initiative. 
+          </h2>
+        <p class="nft-section-desc">
+          <br> <br> <b> attention 📌, the progress bars on the site update once a day in the evening, so don't worry if you don't see your donation immediately reflected on the visual tracker!</b> <br> <br> 
+          - The world is becoming too centralized <br> <br> - Humanity and Nature are suffering immensely from global crises<br> <br>  - MKR Global bridges Web3 technology with real-world impact across major networks like Ethereum, BNB, Polygon, Base, and Monad <br> <br>  - We assist humans with fundamental needs and support nature via preservation and restoration
           <br> <br> 
           - We publish donation and distribution histories every week on Friday <br> <br> 
-         - By using decentralized networks, your contribution goes directly to the destination. Zero intermediaries, zero hidden fees, absolute cryptographic transparency.</p>
+         - By using decentralized networks, your contribution goes directly to the destination. Zero intermediaries, zero hidden fees, absolute cryptographic transparency.
+        <br>
+        </p>
       </div>
 
       <div class="footer-section">
@@ -114,7 +163,7 @@
           HaHa Wallet
         </button>
       </div>
-      <button id="close-wallet-modal-btn" class="skip-btn">Cancel</button>
+      <button id="close-wallet-modal-btn" class="skip-btn">Cancel connection</button>
     </div>
   </div>
 
@@ -142,10 +191,6 @@
           <h3 id="modal-sec3-title">Solutions</h3>
           <p id="modal-sec3-desc"></p>
         </div>
-        
-        <button id="trigger-donate-btn" class="action-btn primary-action">Make a Contribution 🤍</button>
-        <button id="ask-ai-btn" class="ai-button mt-10">Ask AI for deeper insights ✦</button>
-        <div id="ai-response-container" class="hidden-element"></div>
       </div>
     </div>
   </div>
@@ -189,4 +234,5 @@
 
   <script src="script.js"></script>
 </body>
-</html>
+            </html>
+            

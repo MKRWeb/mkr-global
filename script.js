@@ -1,7 +1,6 @@
 // ==========================================================
 // 1. CONSTANTS & MULTI-CHAIN CONFIGURATION
 // ==========================================================
-const API_KEYS = { POLLINATIONS: "c2tfZ3lKdTJIWjlpUjRLZlpYZTNJbjc1Z3M1ZmhHeTBPRjU=" };
 const DESTINATION_WALLET = "0x08b1f390a769027230D51BF6A2729D84Db1e6cE6";
 
 const SUPPORTED_CHAINS = {
@@ -55,36 +54,35 @@ const SUPPORTED_CHAINS = {
 // 2. DATABASE
 // ==========================================================
 const data = {
-  elements: [
-    { id: "soil", name: "Soil", img: "https://images.unsplash.com/photo-1590682680695-43b964a3ae17?auto=format&fit=crop&w=400&q=80", desc: "The upper layer of earth in which plants grow.", usage: "Agriculture, construction material.", pollution: "Chemical fertilizers, deforestation.", preservation: "Crop rotation, organic farming.", aiContext: "Focus on soil as a living super-organism, mycelial network." },
-    { id: "water", name: "Water", img: "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?auto=format&fit=crop&w=400&q=80", desc: "A transparent, tasteless chemical substance.", usage: "Drinking, agriculture, hydroelectric power.", pollution: "Sewage spillages, plastic waste.", preservation: "Water conservation, protecting wetlands.", aiContext: "Focus on water memory, the universal solvent." },
-    { id: "air", name: "Air", img: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=400&q=80", desc: "The invisible gaseous substance surrounding earth.", usage: "Respiration, wind energy.", pollution: "Vehicle emissions, factory smog.", preservation: "Transitioning to renewable energy.", aiContext: "Focus on the atmosphere as a protective shield." },
-    { id: "sound", name: "Sound", img: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=400&q=80", desc: "Vibrations that travel through the air.", usage: "Communication, music, echolocation.", pollution: "Noise pollution from traffic, machinery.", preservation: "Soundproofing, quiet zones.", aiContext: "Focus on cymatics, healing frequencies." },
-    { id: "light", name: "Light", img: "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=400&q=80", desc: "Natural agent that stimulates sight.", usage: "Vision, photosynthesis, solar power.", pollution: "Light pollution disrupting ecosystems.", preservation: "Energy-efficient bulbs, dark-sky compliance.", aiContext: "Focus on light as a particle and wave across the cosmos." }
-  ],
-  rights: [
-    { id: "food", name: "Food Security", img: "https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&w=400&q=80", desc: "The right to have access to adequate food.", usage: "Sustaining human life, energy.", pollution: "Food waste, supply chain monopolies.", preservation: "Local farmers, decentralized networks.", aiContext: "Focus on the biochemistry of nutrition." },
-    { id: "clothes", name: "Clothes", img: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=400&q=80", desc: "The right to adequate clothing.", usage: "Protection from weather, hygiene.", pollution: "Fast fashion waste, unethical labor.", preservation: "Thrifting, sustainable fabrics.", aiContext: "Focus on the future of biodegradable smart-fabrics." },
-    { id: "education", name: "Education", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80", desc: "The right to free and compulsory education.", usage: "Empowerment, societal advancement.", pollution: "Defunding schools, digital divide.", preservation: "Open-source learning, Web3 EdTech.", aiContext: "Focus on neuroplasticity and borderless education." },
-    { id: "healthcare", name: "Healthcare", img: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=400&q=80", desc: "The right to physical and mental health.", usage: "Treating illness, well-being.", pollution: "Privatization making care unaffordable.", preservation: "Universal policies, health decentralization.", aiContext: "Focus on the bioethics of longevity." },
-    { id: "accommodation", name: "Accommodation", img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=400&q=80", desc: "The right to live in security and dignity.", usage: "Safety, psychological stability.", pollution: "Homelessness crises, predatory lending.", preservation: "Affordable housing, community trusts.", aiContext: "Focus on architecture of sustainable smart cities." },
-    { id: "communication", name: "Communication", img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80", desc: "The right to freedom of opinion and expression.", usage: "Sharing ideas, organizing societies.", pollution: "Internet censorship, data harvesting.", preservation: "End-to-end encryption, Web3 platforms.", aiContext: "Focus on how cryptographic protocols protect absolute truth." }
+  projects: [
+    { id: "soil", category: "nature", name: "Soil Restoration", img: "https://images.unsplash.com/photo-1590682680695-43b964a3ae17?auto=format&fit=crop&w=400&q=80", desc: "The upper layer of earth in which plants grow.", usage: "Agriculture, construction material.", pollution: "Chemical fertilizers, deforestation.", preservation: "Crop rotation, organic farming.", verified: true, raised: 1500, goal: 15000 },
+    { id: "water", category: "nature", name: "Clean Water Access", img: "https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?auto=format&fit=crop&w=400&q=80", desc: "A transparent, tasteless chemical substance.", usage: "Drinking, agriculture, hydroelectric power.", pollution: "Sewage spillages, plastic waste.", preservation: "Water conservation, protecting wetlands.", verified: true, raised: 1000, goal: 10000 },
+    { id: "air", category: "nature", name: "Air Quality Defense", img: "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?auto=format&fit=crop&w=400&q=80", desc: "The invisible gaseous substance surrounding earth.", usage: "Respiration, wind energy.", pollution: "Vehicle emissions, factory smog.", preservation: "Transitioning to renewable energy.", verified: true, raised: 1000, goal: 16000 },
+    { id: "sound", category: "nature", name: "Sound Conservation", img: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=400&q=80", desc: "Vibrations that travel through the air.", usage: "Communication, music, echolocation.", pollution: "Noise pollution from traffic, machinery.", preservation: "Soundproofing, quiet zones.", verified: true, raised: 500, goal: 15000 },
+    { id: "light", category: "nature", name: "Light Integrity", img: "https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=400&q=80", desc: "Natural agent that stimulates sight.", usage: "Vision, photosynthesis, solar power.", pollution: "Light pollution disrupting ecosystems.", preservation: "Energy-efficient bulbs, dark-sky compliance.", verified: true, raised: 500, goal: 20000 },
+    { id: "food", category: "humanity", name: "Food Security", img: "https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&w=400&q=80", desc: "The right to have access to adequate food.", usage: "Sustaining human life, energy.", pollution: "Food waste, supply chain monopolies.", preservation: "Local farmers, decentralized networks.", verified: true, raised: 500, goal: 22000 },
+    { id: "clothes", category: "humanity", name: "Clothing Equity", img: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=400&q=80", desc: "The right to adequate clothing.", usage: "Protection from weather, hygiene.", pollution: "Fast fashion waste, unethical labor.", preservation: "Thrifting, sustainable fabrics.", verified: true, raised: 1000, goal: 10000 },
+    { id: "education", category: "humanity", name: "Web3 Education", img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80", desc: "The right to free and compulsory education.", usage: "Empowerment, societal advancement.", pollution: "Defunding schools, digital divide.", preservation: "Open-source learning, Web3 EdTech.", verified: true, raised: 500, goal: 10000 },
+    { id: "healthcare", category: "humanity", name: "Global Healthcare", img: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=400&q=80", desc: "The right to physical and mental health.", usage: "Treating illness, well-being.", pollution: "Privatization making care unaffordable.", preservation: "Universal policies, health decentralization.", verified: true, raised: 500, goal: 15000 },
+    { id: "accommodation", category: "humanity", name: "Accommodation", img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=400&q=80", desc: "The right to live in security and dignity.", usage: "Safety, psychological stability.", pollution: "Homelessness crises, predatory lending.", preservation: "Affordable housing, community trusts.", verified: true, raised: 1500, goal: 18000 },
+    { id: "communication", category: "humanity", name: "Communication", img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=80", desc: "The right to freedom of opinion and expression.", usage: "Sharing ideas, organizing societies.", pollution: "Internet censorship, data harvesting.", preservation: "End-to-end encryption, Web3 platforms.", verified: true, raised: 500, goal: 10000 }
   ]
 };
 
 // ==========================================================
-// 3. WEB3 ARCHITECTURE
+// 3. WEB3 ARCHITECTURE (SECURE & HARDENED)
 // ==========================================================
 const Web3Manager = {
   provider: null,
   userAddress: null,
+  isProcessingTx: false, // NEW CRITICAL FIX: Lock flag for preventing random reloads
 
   async init() {
     if (window.ethereum) {
       this.provider = window.ethereum;
       try {
         const accounts = await this.provider.request({ method: 'eth_accounts' });
-        if (accounts.length > 0) {
+        if (accounts && accounts.length > 0) {
           this.userAddress = accounts[0];
           this.setupListeners();
           UIManager.updateWalletUI();
@@ -96,13 +94,19 @@ const Web3Manager = {
   setupListeners() {
     if (!this.provider || !this.provider.on) return;
     this.provider.on('accountsChanged', (accounts) => {
-      if (accounts.length === 0) this.disconnect();
+      if (!accounts || accounts.length === 0) this.disconnect();
       else {
         this.userAddress = accounts[0];
         UIManager.updateWalletUI();
       }
     });
-    this.provider.on('chainChanged', () => window.location.reload());
+
+    // NEW CRITICAL FIX: Only reload if the user manually switched networks outside of a transaction flow
+    this.provider.on('chainChanged', () => {
+      if (!this.isProcessingTx) {
+        window.location.reload();
+      }
+    });
   },
 
   async connectWallet(walletType) {
@@ -193,7 +197,7 @@ const Web3Manager = {
 
   async waitForReceipt(txHash) {
     let receipt = null; let attempts = 0;
-    while (receipt === null && attempts < 20) { 
+    while (receipt === null && attempts < 150) { 
       await new Promise(resolve => setTimeout(resolve, 2000)); 
       receipt = await this.provider.request({ method: 'eth_getTransactionReceipt', params: [txHash] });
       attempts++;
@@ -205,7 +209,14 @@ const Web3Manager = {
     if (!valueString || isNaN(valueString)) return 0n;
     valueString = valueString.replace(/,/g, '');
     let [integer, fraction = ""] = valueString.split(".");
-    fraction = fraction.padEnd(decimals, "0").slice(0, decimals);
+    
+    if (fraction.length > decimals) {
+      fraction = fraction.slice(0, decimals);
+    } else {
+      fraction = fraction.padEnd(decimals, "0");
+    }
+    
+    if (!integer) integer = "0";
     return BigInt(integer + fraction);
   },
 
@@ -222,6 +233,8 @@ const Web3Manager = {
 // ==========================================================
 const UIManager = {
   activeInfoItem: null,
+  currentFilter: 'all',
+  searchQuery: '',
 
   showDashboardUI() {
     const splash = document.getElementById('monad-splash-screen');
@@ -320,61 +333,86 @@ const UIManager = {
       modal.addEventListener('click', (e) => { if (e.target === modal) history.back(); });
     });
 
-    this.renderGrids();
-    this.setupAI();
+    document.getElementById('project-search').addEventListener('input', (e) => {
+      this.searchQuery = e.target.value.toLowerCase();
+      this.renderProjects();
+    });
+
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        this.currentFilter = e.target.getAttribute('data-filter');
+        
+        const titleMap = { 'all': 'Explore Verified Causes', 'nature': 'Support Nature', 'humanity': 'Support Humanity' };
+        document.getElementById('dynamic-section-title').textContent = titleMap[this.currentFilter];
+        
+        this.renderProjects();
+      });
+    });
+
+    this.renderProjects();
     this.setupDonationProcessor();
     this.setupDynamicTokenDropdown();
   },
 
-  renderGrids() {
-    const elGrid = document.getElementById('elements-grid');
-    const rightGrid = document.getElementById('rights-grid');
+  renderProjects() {
+    const grid = document.getElementById('projects-grid');
+    grid.innerHTML = '';
 
-    data.elements.forEach(item => elGrid.appendChild(this.createInfoCard(item, 'element')));
-    data.rights.forEach(item => rightGrid.appendChild(this.createInfoCard(item, 'right')));
+    const filtered = data.projects.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(this.searchQuery) || item.desc.toLowerCase().includes(this.searchQuery);
+      const matchesCategory = this.currentFilter === 'all' || item.category === this.currentFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<p style="color:#888; text-align:center; width:100%; grid-column: 1 / -1; padding: 20px;">No projects found matching your search.</p>`;
+      return;
+    }
+
+    filtered.forEach(item => grid.appendChild(this.createInfoCard(item)));
   },
 
-  createInfoCard(item, type) {
+  createInfoCard(item) {
     const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `<img src="${item.img}" alt="${item.name}"><h3>${item.name}</h3>`;
-    div.addEventListener('click', () => this.openInfoModal(item, type));
-    return div;
-  },
-
-  openInfoModal(item, type) {
-    this.activeInfoItem = item; 
-    document.getElementById('modal-image').src = item.img;
-    document.getElementById('modal-title').textContent = item.name;
-    document.getElementById('modal-desc').textContent = item.desc;
-    document.getElementById('modal-sec1-title').textContent = type === 'element' ? 'Usage in Nature' : 'Importance';
-    document.getElementById('modal-sec1-desc').textContent = item.usage;
-    document.getElementById('modal-sec2-title').textContent = type === 'element' ? 'Pollution & Threats' : 'Violations';
-    document.getElementById('modal-sec2-desc').textContent = item.pollution;
-    document.getElementById('modal-sec3-title').textContent = type === 'element' ? 'Preservation' : 'Solutions';
-    document.getElementById('modal-sec3-desc').textContent = item.preservation;
-
-    document.getElementById('ask-ai-btn').style.display = 'block';
-    document.getElementById('ai-response-container').style.display = 'none';
-
-    history.pushState({ view: 'modal' }, '', '#info');
-    document.getElementById('info-modal').classList.remove('hidden-modal');
+    div.className = 'project-card';
     
-    const donateBtn = document.getElementById('trigger-donate-btn');
-    donateBtn.onclick = () => {
-      document.getElementById('info-modal').classList.add('hidden-modal');
-      
-      document.getElementById('donation-target-name').textContent = `Support: ${item.name}`;
-      document.getElementById('tx-status').classList.add('hidden-element');
-      
-      const sendBtn = document.getElementById('process-donation-btn');
-      sendBtn.disabled = false;
-      sendBtn.textContent = "Send Donation";
-      sendBtn.style.background = "#fff";
+    const progressPercent = Math.min((item.raised / item.goal) * 100, 100).toFixed(1);
+    
+    div.innerHTML = `
+      <div class="card-img-wrapper">
+        <img src="${item.img}" alt="${item.name}">
+        ${item.verified ? '<div class="verified-badge">✓ Verified</div>' : ''}
+        <div class="category-tag">${item.category === 'nature' ? '🌱 Nature' : '🤝 Humanity'}</div>
+      </div>
+      <div class="card-body">
+        <h3>${item.name}</h3>
+        <p class="card-desc">${item.desc}</p>
+        
+        <div class="funding-metrics">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+          </div>
+          <div class="funding-stats">
+            <span class="raised">$${item.raised.toLocaleString()} raised</span>
+            <span class="goal">of $${item.goal.toLocaleString()}</span>
+          </div>
+        </div>
 
-      history.replaceState({ view: 'modal' }, '', '#donate');
-      document.getElementById('donation-modal').classList.remove('hidden-modal');
-    };
+        <button class="card-inline-donate-btn">Donate to ${item.name}</button>
+      </div>
+    `;
+
+    div.addEventListener('click', (e) => {
+      if (e.target.classList.contains('card-inline-donate-btn')) {
+        e.stopPropagation(); 
+        this.openDonationModal(item);
+      } else {
+        this.openInfoModal(item, item.category);
+      }
+    });
+    return div;
   },
 
   openDonationModal(item) {
@@ -388,33 +426,6 @@ const UIManager = {
 
     history.pushState({ view: 'modal' }, '', '#donate');
     document.getElementById('donation-modal').classList.remove('hidden-modal');
-  },
-
-  setupAI() {
-    document.getElementById('ask-ai-btn').addEventListener('click', async (e) => {
-      const btn = e.target;
-      const container = document.getElementById('ai-response-container');
-      btn.style.display = 'none';
-      container.classList.remove('hidden-element');
-      container.style.display = 'block';
-      container.innerHTML = '<span class="typing-indicator">> Connecting to AI Oracle...</span>';
-
-      try {
-        const sysPrompt = `You are a visionary Web3 AI Oracle. Provide a deeply profound 3-sentence explanation regarding: ${this.activeInfoItem.name}. FOCUS: ${this.activeInfoItem.aiContext}. Speak directly, concisely, and with authoritative wisdom.`;
-        const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + atob(API_KEYS.POLLINATIONS) },
-          body: JSON.stringify({ messages: [ { role: 'system', content: sysPrompt }, { role: 'user', content: "Generate oracle insight." } ] })
-        });
-        if (response.ok) {
-          const resData = await response.json();
-          container.innerHTML = `<span class="ai-text"><strong>✦ Oracle Insight:</strong><br><br>${resData.choices[0].message.content}</span>`;
-        } else throw new Error("Network error");
-      } catch (err) {
-        container.innerHTML = '<span style="color: #ff5555;">[!] Oracle Connection Failed.</span>';
-        setTimeout(() => { btn.style.display = 'block'; container.style.display = 'none'; }, 3000);
-      }
-    });
   },
 
   setupDynamicTokenDropdown() {
@@ -464,6 +475,8 @@ const UIManager = {
 
       try {
         processBtn.disabled = true;
+        Web3Manager.isProcessingTx = true; // NEW CRITICAL FIX: Lock the app state so it won't refresh
+
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#888";
@@ -508,7 +521,11 @@ const UIManager = {
           processBtn.style.color = "#000";
           statusText.textContent = "Donation Successful ✓";
           amountInput.value = '';
-        } else throw new Error("Transaction reverted by the blockchain.");
+        } else if (receipt === null) {
+            throw new Error("Transaction is taking longer than expected. Please check your wallet history to see if it confirmed.");
+        } else {
+            throw new Error("Transaction reverted by the blockchain.");
+        }
         
       } catch (error) {
         console.error(error);
@@ -516,11 +533,15 @@ const UIManager = {
         processBtn.textContent = "Send Donation";
         statusText.style.color = "#ff5555";
         
-        if (error.message && error.message.includes("User denied") || error.code === 4001) {
+        if (error?.message?.includes("longer than expected")) {
+             statusText.textContent = error.message;
+        } else if (error?.message?.includes("User denied") || error?.code === 4001) {
           statusText.textContent = "Transaction was cancelled.";
         } else {
           statusText.textContent = "Transaction Failed. Please check balance and connection.";
         }
+      } finally {
+        Web3Manager.isProcessingTx = false; // NEW CRITICAL FIX: Unlock the app state
       }
     });
   }
