@@ -163,9 +163,10 @@ const Web3Manager = {
     });
   },
 
-  async connectWallet(walletType) {
+    async connectWallet(walletType) {
     let targetProvider = null;
     
+    // 1. Check if the DApp is already running inside an injected wallet browser
     if (window.ethereum || window.okxwallet || window.haha) {
       if (walletType === 'metamask') {
         targetProvider = window.ethereum?.providers?.find(p => p.isMetaMask) || window.ethereum;
@@ -178,18 +179,30 @@ const Web3Manager = {
       } else if (walletType === 'haha') {
         targetProvider = window.haha || window.ethereum;
       }
-    } else {
+    } 
+    
+    // 2. If no injected provider is found (running in standard Safari/Chrome), trigger deep links
+    if (!targetProvider) {
       const currentUrl = window.location.host + window.location.pathname;
       const fullUrl = `https://${currentUrl}`;
+      const encodedUrl = encodeURIComponent(fullUrl);
       
       if (walletType === 'metamask') {
         window.open(`https://metamask.app.link/dapp/${currentUrl}`, '_blank');
         return false;
       } else if (walletType === 'trustwallet') {
-        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${fullUrl}`, '_blank');
+        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`, '_blank');
         return false;
       } else if (walletType === 'coinbase') {
-        window.open(`https://go.cb-w.com/dapp?cb_url=${encodeURIComponent(fullUrl)}`, '_blank');
+        window.open(`https://go.cb-w.com/dapp?cb_url=${encodedUrl}`, '_blank');
+        return false;
+      } else if (walletType === 'okx') {
+        // Official OKX Wallet Deep Link
+        window.open(`okx://wallet/dapp/url?dappUrl=${encodedUrl}`, '_blank');
+        return false;
+      } else if (walletType === 'haha') {
+        // HaHa Wallet does not currently support universal deep linking
+        alert('Please open this site manually inside the HaHa App browser.');
         return false;
       } else {
         alert(`Please open this site inside the ${walletType} App browser.`);
@@ -197,8 +210,7 @@ const Web3Manager = {
       }
     }
 
-    if (!targetProvider) return false;
-
+    // 3. Connect to the found provider
     try {
       this.provider = targetProvider;
       const accounts = await this.provider.request({ method: 'eth_requestAccounts' });
@@ -211,6 +223,7 @@ const Web3Manager = {
       return false; 
     }
   },
+      
 
   disconnect() {
     this.userAddress = null;
