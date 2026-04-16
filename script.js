@@ -656,7 +656,25 @@ const UIManager = {
   }
 };
 
+// ==========================================================
+// 5. SERVICE WORKER INITIALIZATION (Fast Mobile Loading)
+// ==========================================================
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        })
+        .catch(err => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+    });
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   UIManager.init();
+  registerServiceWorker(); // This triggers the caching to stop the black screen
   await Web3Manager.init(); 
 });
