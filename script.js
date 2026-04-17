@@ -1,7 +1,7 @@
 // ==========================================================
 // 1. CONSTANTS & MULTI-CHAIN CONFIGURATION
 // ==========================================================
-const DESTINATION_WALLET = "0x08b1f390a769027230D51BF6A2729D84Db1e6cE6";
+const DESTINATION_WALLET = "0x7811334586e85540f1DAE69780dEA0Db7bb45838";
 
 const SUPPORTED_CHAINS = {
   "0x38": { // BNB Smart Chain
