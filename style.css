@@ -363,3 +363,71 @@ body, html {
 .article-body ul li { margin-bottom: 12px; position: relative; padding-left: 20px; }
 .article-body ul li::before { content: "•"; color: #00ffaa; position: absolute; left: 0; font-weight: bold; }
 .article-body .highlight-text { color: #00ffaa; font-weight: bold; }
+
+
+/* --- LIVE TREASURY TRACKING UI --- */
+.treasury-section-wrapper { 
+  background: rgba(141, 107, 255, 0.04); 
+  border: 1px solid rgba(141, 107, 255, 0.3); 
+  position: relative;
+  overflow: hidden;
+}
+
+.treasury-section-wrapper::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+  background: linear-gradient(to bottom, #8D6BFF, #00ffaa);
+}
+
+.treasury-header-row {
+  display: flex; align-items: center; margin: 0 20px 15px 20px; border-bottom: 1px solid rgba(141, 107, 255, 0.3); padding-bottom: 10px;
+}
+
+.treasury-title-glow { color: #8D6BFF; text-shadow: 0 0 15px rgba(141, 107, 255, 0.4); margin-left: 10px !important; }
+
+.treasury-desc {
+  color: #aaa; font-size: 14px; margin: 0 20px 20px 20px; line-height: 1.5;
+}
+
+.treasury-wallet-display {
+  background: var(--app-surface);
+  border: 1px dashed rgba(141, 107, 255, 0.5);
+  border-radius: 12px;
+  margin: 0 20px 20px 20px;
+  padding: 15px;
+}
+
+.wallet-label {
+  display: block; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold;
+}
+
+.wallet-address-box {
+  display: flex; justify-content: space-between; align-items: center; background: #0b0a10; padding: 10px 15px; border-radius: 8px;
+}
+
+#treasury-address {
+  font-family: var(--terminal-font); color: #00ffaa; font-size: clamp(10px, 3vw, 14px); word-break: break-all; margin-right: 10px;
+}
+
+.copy-wallet-btn {
+  background: rgba(141, 107, 255, 0.1); border: 1px solid var(--app-primary); color: #fff; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer; transition: 0.2s; white-space: nowrap;
+}
+
+.copy-wallet-btn:hover {
+  background: var(--app-primary); box-shadow: 0 0 10px rgba(141, 107, 255, 0.5);
+}
+
+.explorer-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 0 20px 10px 20px;
+}
+
+.explorer-link-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(20, 18, 28, 0.6); border: 1px solid #2a2638; color: #ccc; text-decoration: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: bold; transition: all 0.2s ease;
+}
+
+.explorer-link-btn:hover {
+  background: rgba(141, 107, 255, 0.1); border-color: rgba(141, 107, 255, 0.4); color: #fff; transform: translateY(-2px);
+}
+
+.explorer-icon {
+  width: 18px; height: 18px; object-fit: contain; line-height: 18px;
+}
