@@ -198,7 +198,7 @@ const Web3Manager = {
         return false;
       } else if (walletType === 'okx') {
         // Official OKX Wallet Deep Link
-        window.open(`okx://wallet/dapp/url?dappUrl=${encodedUrl}`, '_blank');
+        window.open(`https:/okx.wallet/dapp/url?dappUrl=${encodedUrl}`, '_blank');
         return false;
       } else if (walletType === 'haha') {
         // HaHa Wallet does not currently support universal deep linking
