@@ -197,8 +197,8 @@ const Web3Manager = {
         window.open(`https://go.cb-w.com/dapp?cb_url=${encodedUrl}`, '_blank');
         return false;
       } else if (walletType === 'okx') {
-        // Official OKX Wallet Universal Deep Link
-        window.open(`https://web3.okx.com/wallet/dapp/url?dappUrl=${encodedUrl}`)}`, '_blank');
+        // OKX Wallet does not currently support universal deep linking
+        alert('Please open this site manually inside the OKX App browser.');
         return false;
       } else if (walletType === 'haha') {
         // HaHa Wallet does not currently support universal deep linking
