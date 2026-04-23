@@ -9,7 +9,6 @@ import { BrowserProvider, Contract, parseUnits } from 'https://esm.sh/ethers@6.1
 // ==========================================================
 const DESTINATION_WALLET = "0x7811334586e85540f1DAE69780dEA0Db7bb45838";
 
-// Using Ankr's Public Premium Endpoints: Handles massive traffic without API keys
 const SUPPORTED_CHAINS = {
   "0x38": { 
     chainId: "0x38", chainName: "BNB Smart Chain", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
@@ -132,8 +131,30 @@ const Web3Manager = {
 
   async init() {
     modal.subscribeProvider((state) => {
+      const wasDisconnected = !this.userAddress;
+
       if (state.isConnected && state.address) {
         this.userAddress = state.address;
+        
+        // Auto-redirect and notify after sign-in
+        if (wasDisconnected) {
+          const donationModal = document.getElementById('donation-modal');
+          const statusText = document.getElementById('tx-status');
+          
+          if (donationModal.classList.contains('hidden-modal')) {
+            UIManager.openDonationModal({ 
+              name: "MKR Global Initiative", 
+              desc: "Support the global treasury.", 
+              usage: "", pollution: "", preservation: "" 
+            });
+          }
+          
+          if (statusText) {
+            statusText.classList.remove('hidden-element');
+            statusText.style.color = "#00ffaa";
+            statusText.textContent = "wallet connected donate now";
+          }
+        }
       } else {
         this.userAddress = null;
       }
@@ -191,7 +212,7 @@ const Web3Manager = {
 };
 
 // ==========================================================
-// 5. UI MANAGER
+  // 5. UI MANAGER
 // ==========================================================
 const UIManager = {
   searchQuery: '',
@@ -265,7 +286,6 @@ const UIManager = {
 
     document.getElementById('back-to-splash-btn').addEventListener('click', () => history.back());
 
-     // Fixes the UX: Opens Donation Entry before Reown Wallet connects!
     document.getElementById('header-donate-btn').addEventListener('click', () => {
       UIManager.openDonationModal({ name: "MKR Global Initiative", desc: "Support the global treasury.", usage: "", pollution: "", preservation: "" }); 
     });
@@ -444,7 +464,6 @@ const UIManager = {
         return;
       }
       
-      // Prompts Web3Modal connection WITHOUT closing the donation input screen
       if (!Web3Manager.userAddress) {
         Web3Manager.connectWallet(); 
         return; 
@@ -499,7 +518,7 @@ const UIManager = {
           processBtn.textContent = "Thank You! ♥";
           processBtn.style.background = "#00ffaa";
           processBtn.style.color = "#000";
-          statusText.textContent = "Donation Successful ✓";
+          statusText.textContent = "Donation successful - God bless you 🍀"; 
           amountInput.value = '';
         } else {
           throw new Error("Transaction reverted by the blockchain.");
