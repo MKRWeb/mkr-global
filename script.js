@@ -212,7 +212,7 @@ const Web3Manager = {
 };
 
 // ==========================================================
-  // 5. UI MANAGER
+// 5. UI MANAGER
 // ==========================================================
 const UIManager = {
   searchQuery: '',
@@ -456,6 +456,12 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
+      // STRICT LOCK: Prevents double-execution if clicked multiple times rapidly
+      if (Web3Manager.isProcessingTx) {
+        console.log("Transaction already processing, ignoring double click.");
+        return; 
+      }
+
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
       
@@ -469,9 +475,11 @@ const UIManager = {
         return; 
       }
       
+      // LOCK ACTIVATED IMMEDIATELY
+      Web3Manager.isProcessingTx = true;
+      
       try {
         processBtn.disabled = true;
-        Web3Manager.isProcessingTx = true;
 
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
@@ -536,6 +544,7 @@ const UIManager = {
           statusText.textContent = "Transaction Failed. Check your balance.";
         }
       } finally {
+        // UNLOCK WHEN FINISHED OR FAILED
         Web3Manager.isProcessingTx = false;
       }
     });
