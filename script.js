@@ -130,6 +130,14 @@ const Web3Manager = {
   isProcessingTx: false,
 
   async init() {
+    // Check initial state on load to avoid requiring a refresh
+    try {
+      if (modal.getIsConnected()) {
+        const addr = modal.getAddress();
+        if (addr) this.userAddress = addr;
+      }
+    } catch(e) { console.warn("Failed getting initial modal state", e); }
+
     modal.subscribeProvider((state) => {
       const wasDisconnected = !this.userAddress;
 
@@ -152,7 +160,7 @@ const Web3Manager = {
           if (statusText) {
             statusText.classList.remove('hidden-element');
             statusText.style.color = "#00ffaa";
-            statusText.textContent = "wallet connected donate now";
+            statusText.textContent = "Wallet Connected. You may now donate.";
           }
         }
       } else {
@@ -160,6 +168,8 @@ const Web3Manager = {
       }
       UIManager.updateWalletUI();
     });
+    
+    UIManager.updateWalletUI(); // Final catch-all update on init
   },
 
   connectWallet() {
@@ -173,7 +183,10 @@ const Web3Manager = {
   async getSigner() {
     const walletProvider = modal.getWalletProvider();
     if (!walletProvider) throw new Error("Wallet not fully connected.");
-    const provider = new BrowserProvider(walletProvider);
+    
+    // FIX 2: Pass "any" as the network to prevent Ethers from caching old networks 
+    // This resolves the "manual refresh" bug when switching chains inside a single session.
+    const provider = new BrowserProvider(walletProvider, "any");
     return await provider.getSigner();
   },
 
@@ -181,7 +194,7 @@ const Web3Manager = {
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
     const walletProvider = modal.getWalletProvider();
     
-    const currentProvider = new BrowserProvider(walletProvider);
+    const currentProvider = new BrowserProvider(walletProvider, "any");
     const currentNetwork = await currentProvider.getNetwork();
     
     if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
@@ -213,7 +226,8 @@ const Web3Manager = {
 
 // ==========================================================
 // 5. UI MANAGER
-// ==========================================================
+
+    // ==========================================================
 const UIManager = {
   searchQuery: '',
   currentFilter: 'all',
@@ -423,6 +437,7 @@ const UIManager = {
     sendBtn.disabled = false;
     sendBtn.textContent = "Send Donation";
     sendBtn.style.background = ""; 
+    sendBtn.style.color = "";
 
     history.pushState({ view: 'modal' }, '', '#donate');
     document.getElementById('donation-modal').classList.remove('hidden-modal');
@@ -456,11 +471,8 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
-      // STRICT LOCK: Prevents double-execution if clicked multiple times rapidly
-      if (Web3Manager.isProcessingTx) {
-        console.log("Transaction already processing, ignoring double click.");
-        return; 
-      }
+      // Prevent double-clicks
+      if (Web3Manager.isProcessingTx) return;
 
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
@@ -472,15 +484,16 @@ const UIManager = {
       
       if (!Web3Manager.userAddress) {
         Web3Manager.connectWallet(); 
+        statusText.classList.remove('hidden-element');
+        statusText.style.color = "#00ffaa";
+        statusText.textContent = "Please connect wallet and click Send again.";
         return; 
       }
       
-      // LOCK ACTIVATED IMMEDIATELY
       Web3Manager.isProcessingTx = true;
+      processBtn.disabled = true;
       
       try {
-        processBtn.disabled = true;
-
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#888";
@@ -533,19 +546,38 @@ const UIManager = {
         }
         
       } catch (error) {
-        console.error(error);
-        processBtn.disabled = false;
-        processBtn.textContent = "Send Donation";
+        console.error("Tx Error:", error);
         statusText.style.color = "#ff5555";
         
-        if (error?.code === 4001 || error?.message?.includes("User denied")) {
+        const errStr = (error.message || error.toString()).toLowerCase();
+        
+        // FIX 1: Explicitly catch insufficient balance errors from metamask / ethers 
+        if (error?.code === 4001 || error?.code === 'ACTION_REJECTED' || errStr.includes("user denied") || errStr.includes("rejected")) {
           statusText.textContent = "Transaction was cancelled.";
+        } else if (errStr.includes("insufficient funds") || error?.code === 'INSUFFICIENT_FUNDS' || errStr.includes("-32000")) {
+          statusText.textContent = "Insufficient balance to cover transaction.";
         } else {
-          statusText.textContent = "Transaction Failed. Check your balance.";
+          statusText.textContent = "Transaction Failed. Please check network/balance.";
         }
       } finally {
         // UNLOCK WHEN FINISHED OR FAILED
         Web3Manager.isProcessingTx = false;
+        
+        // FIX 3: Robust UI reset protocol to prevent the button from locking permanently
+        setTimeout(() => {
+           processBtn.disabled = false;
+           // If it failed, reset the button text instantly. If it succeeded, wait 3 seconds to let them read "Thank You", then reset.
+           if (processBtn.textContent !== "Thank You! ♥") {
+               processBtn.textContent = "Send Donation";
+           } else {
+               setTimeout(() => {
+                   processBtn.textContent = "Send Donation";
+                   processBtn.style.background = "";
+                   processBtn.style.color = "";
+                   statusText.classList.add("hidden-element");
+               }, 3000); 
+           }
+        }, 1500);
       }
     });
   }
