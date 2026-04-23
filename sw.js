@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mkr-global-cache-v5';
+const CACHE_NAME = 'mkr-global-cache-v7';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Opened cache');
+      console.log('Opened cache v4');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -42,3 +42,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
