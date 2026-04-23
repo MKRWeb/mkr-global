@@ -299,7 +299,7 @@ body, html {
 .impact-overlay p { color: #00ffaa; font-size: 13px; font-family: var(--terminal-font); }
 
 /* --- NEW ARTICLE MODAL UI --- */
-.article-content { 
+ .article-content { 
   max-width: 700px; 
   width: 95%; 
   max-height: 90vh; 
@@ -391,4 +391,4 @@ body, html {
 
 .explorer-icon {
   width: 18px; height: 18px; object-fit: contain; line-height: 18px;
-                          }
+                   }
