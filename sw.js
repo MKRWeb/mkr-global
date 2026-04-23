@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mkr-global-cache-v7';
+const CACHE_NAME = 'mkr-global-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
