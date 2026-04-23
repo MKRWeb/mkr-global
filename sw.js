@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mkr-global-cache-v7';
+const CACHE_NAME = 'mkr-global-cache-v8'; // Bumped cache version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Opened cache v4');
+      console.log('Opened cache ' + CACHE_NAME);
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -42,4 +42,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
