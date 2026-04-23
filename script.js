@@ -1,45 +1,52 @@
 // ==========================================================
-// 1. CONSTANTS & MULTI-CHAIN CONFIGURATION
+// 0. IMPORTS (Web3Modal & Ethers.js via CDN)
+// ==========================================================
+import { createWeb3Modal, defaultConfig } from 'https://esm.sh/@web3modal/ethers@5.0.11'
+import { BrowserProvider, Contract, parseUnits } from 'https://esm.sh/ethers@6.11.1'
+
+// ==========================================================
+// 1. CONSTANTS & HIGH-CAPACITY MULTI-CHAIN CONFIGURATION
 // ==========================================================
 const DESTINATION_WALLET = "0x7811334586e85540f1DAE69780dEA0Db7bb45838";
 
+// Using Ankr's Public Premium Endpoints: Handles massive traffic without API keys
 const SUPPORTED_CHAINS = {
-  "0x38": { // BNB Smart Chain
+  "0x38": { 
     chainId: "0x38", chainName: "BNB Smart Chain", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
-    rpcUrls: ["https://bsc-dataseed.binance.org/"], blockExplorerUrls: ["https://bscscan.com/"],
+    rpcUrls: ["https://rpc.ankr.com/bsc"], blockExplorerUrls: ["https://bscscan.com/"],
     native: "BNB",
     tokens: {
       USDT: { address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
       USDC: { address: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", decimals: 18 }
     }
   },
-  "0x1": { // Ethereum Mainnet
+  "0x1": { 
     chainId: "0x1", chainName: "Ethereum Mainnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: ["https://cloudflare-eth.com"], blockExplorerUrls: ["https://etherscan.io/"],
+    rpcUrls: ["https://rpc.ankr.com/eth"], blockExplorerUrls: ["https://etherscan.io/"],
     native: "ETH",
     tokens: {
       USDT: { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6 },
       USDC: { address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", decimals: 6 }
     }
   },
-  "0x89": { // Polygon Mainnet
+  "0x89": { 
     chainId: "0x89", chainName: "Polygon Mainnet", nativeCurrency: { name: "POL", symbol: "POL", decimals: 18 },
-    rpcUrls: ["https://polygon-rpc.com/"], blockExplorerUrls: ["https://polygonscan.com/"],
+    rpcUrls: ["https://rpc.ankr.com/polygon"], blockExplorerUrls: ["https://polygonscan.com/"],
     native: "POL",
     tokens: {
       USDT: { address: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", decimals: 6 },
       USDC: { address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359", decimals: 6 }
     }
   },
-  "0x2105": { // Base Network
+  "0x2105": { 
     chainId: "0x2105", chainName: "Base Mainnet", nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: ["https://mainnet.base.org"], blockExplorerUrls: ["https://basescan.org/"],
+    rpcUrls: ["https://rpc.ankr.com/base"], blockExplorerUrls: ["https://basescan.org/"],
     native: "ETH",
     tokens: {
       USDC: { address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", decimals: 6 }
     }
   },
-  "0x8f": { // Monad Mainnet
+  "0x8f": { 
     chainId: "0x8f", chainName: "Monad Mainnet", nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
     rpcUrls: ["https://rpc.monad.xyz"], blockExplorerUrls: ["https://monadscan.com/"],
     native: "MON",
@@ -51,7 +58,7 @@ const SUPPORTED_CHAINS = {
 };
 
 // ==========================================================
-// 2. DATABASE
+// 2. DATABASE & ARTICLES 
 // ==========================================================
 const data = {
   projects: [
@@ -69,184 +76,104 @@ const data = {
   ]
 };
 
-// ==========================================================
-// 2.5 ARTICLE CONTENT DATABASE
-// ==========================================================
 const articleData = {
   nature: {
     tag: "Regenerative Finance (ReFi)",
     title: "Restoring Nature: The Web3 Blueprint for Earth",
     img: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80",
-    content: `
-      <p>For decades, environmental preservation has been hindered by opaque supply chains, inefficient funding, and a lack of global coordination. <span class="highlight-text">MKR Global</span> is changing this narrative by leveraging decentralized technology to create a transparent, borderless blueprint for restoring our planet.</p>
-      
-      <h2>The Tokenization of Impact</h2>
-      <p>Imagine a world where every tree planted, every gallon of water purified, and every acre of soil restored is permanently recorded on a public, immutable ledger. Through ReFi (Regenerative Finance), we are moving beyond simply "doing less harm" to actively incentivizing ecological restoration at scale.</p>
-      
-      <blockquote>"We cannot solve our crises with the same economic systems that created them. We must build economies that explicitly value the living world."</blockquote>
-      
-      <h2>How Your Contribution Heals</h2>
-      <p>When you donate via networks like Monad, Base, or Polygon, your funds bypass bureaucratic bottlenecks. Smart contracts ensure that capital flows directly to verified conservationists and ecological stewards on the ground. We are currently funding:</p>
-      <ul>
-         <li><b>Soil Regeneration:</b> Supporting organic farming practices that sequester carbon back into the earth.</li>
-         <li><b>Water Purification:</b> Deploying decentralized infrastructure to communities lacking access to clean aquifers.</li>
-         <li><b>Forest Defense:</b> Utilizing satellite data and on-chain verification to protect ancient woodlands from illegal logging.</li>
-      </ul>
-      <p>By participating in this ecosystem, you aren't just making a donation; you are investing in the very foundation of biological life.</p>
-    `
+    content: `<p>For decades, environmental preservation has been hindered by opaque supply chains, inefficient funding, and a lack of global coordination. <span class="highlight-text">MKR Global</span> is changing this narrative by leveraging decentralized technology to create a transparent, borderless blueprint for restoring our planet.</p><h2>The Tokenization of Impact</h2><p>Imagine a world where every tree planted, every gallon of water purified, and every acre of soil restored is permanently recorded on a public, immutable ledger. Through ReFi (Regenerative Finance), we are moving beyond simply "doing less harm" to actively incentivizing ecological restoration at scale.</p><blockquote>"We cannot solve our crises with the same economic systems that created them. We must build economies that explicitly value the living world."</blockquote><h2>How Your Contribution Heals</h2><p>When you donate via networks like Monad, Base, or Polygon, your funds bypass bureaucratic bottlenecks. Smart contracts ensure that capital flows directly to verified conservationists and ecological stewards on the ground. We are currently funding:</p><ul><li><b>Soil Regeneration:</b> Supporting organic farming practices that sequester carbon back into the earth.</li><li><b>Water Purification:</b> Deploying decentralized infrastructure to communities lacking access to clean aquifers.</li><li><b>Forest Defense:</b> Utilizing satellite data and on-chain verification to protect ancient woodlands from illegal logging.</li></ul><p>By participating in this ecosystem, you aren't just making a donation; you are investing in the very foundation of biological life.</p>`
   },
   humanity: {
     tag: "Borderless Human Rights",
     title: "Empowering Humanity: Unlocking Universal Dignity",
     img: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80",
-    content: `
-      <p>In a hyper-connected world, arbitrary geographic borders should not dictate a person's access to basic human rights. Through cryptography and decentralized networks, we are pioneering a new era of <span class="highlight-text">borderless humanitarian aid</span>.</p>
-      
-      <h2>Censorship-Resistant Funding</h2>
-      <p>Traditional financial systems can easily be weaponized, shutting out vulnerable populations, activists, and grassroots organizers. Cryptocurrency fundamentally changes this paradigm. A transaction sent on the blockchain cannot be intercepted, censored, or frozen by corrupt authorities.</p>
-      
-      <blockquote>"True empowerment begins when financial sovereignty is recognized as a fundamental human right, accessible to anyone with an internet connection."</blockquote>
-      
-      <h2>Focus Areas for Human Advancement</h2>
-      <p>Your support flows seamlessly across global borders to fuel initiatives that elevate the human condition:</p>
-      <ul>
-         <li><b>Web3 Education:</b> Providing devices and decentralized learning platforms to bridge the global digital divide.</li>
-         <li><b>Global Healthcare:</b> Funding decentralized autonomous organizations (DAOs) that provide open-source medical supplies and telehealth access.</li>
-         <li><b>Shelter & Security:</b> Supporting community-owned housing trusts that resist predatory lending practices.</li>
-      </ul>
-      <p>Together, we are stripping away the heavy inefficiencies of legacy philanthropy and replacing them with a system built on cryptographic truth, lightning speed, and unyielding global solidarity.</p>
-    `
+    content: `<p>In a hyper-connected world, arbitrary geographic borders should not dictate a person's access to basic human rights. Through cryptography and decentralized networks, we are pioneering a new era of <span class="highlight-text">borderless humanitarian aid</span>.</p><h2>Censorship-Resistant Funding</h2><p>Traditional financial systems can easily be weaponized, shutting out vulnerable populations, activists, and grassroots organizers. Cryptocurrency fundamentally changes this paradigm. A transaction sent on the blockchain cannot be intercepted, censored, or frozen by corrupt authorities.</p><blockquote>"True empowerment begins when financial sovereignty is recognized as a fundamental human right, accessible to anyone with an internet connection."</blockquote><h2>Focus Areas for Human Advancement</h2><p>Your support flows seamlessly across global borders to fuel initiatives that elevate the human condition:</p><ul><li><b>Web3 Education:</b> Providing devices and decentralized learning platforms to bridge the global digital divide.</li><li><b>Global Healthcare:</b> Funding decentralized autonomous organizations (DAOs) that provide open-source medical supplies and telehealth access.</li><li><b>Shelter & Security:</b> Supporting community-owned housing trusts that resist predatory lending practices.</li></ul><p>Together, we are stripping away the heavy inefficiencies of legacy philanthropy and replacing them with a system built on cryptographic truth, lightning speed, and unyielding global solidarity.</p>`
   }
 };
 
 // ==========================================================
-// 3. WEB3 ARCHITECTURE (SECURE & HARDENED)
+// 3. WEB3MODAL (APPKIT) SETUP
+// ==========================================================
+const projectId = 'ff2fa04417b4e3b802961da55db12d63'; 
+
+const metadata = {
+  name: 'MKR Global',
+  description: 'Borderless Web3 Donations',
+  url: window.location.origin,
+  icons: [window.location.origin + '/cat_dev.jpg']
+};
+
+const w3mChains = Object.values(SUPPORTED_CHAINS).map(c => ({
+  chainId: parseInt(c.chainId, 16),
+  name: c.chainName,
+  currency: c.nativeCurrency.symbol,
+  explorerUrl: c.blockExplorerUrls[0],
+  rpcUrl: c.rpcUrls[0]
+}));
+
+const modal = createWeb3Modal({
+  ethersConfig: defaultConfig({ metadata }),
+  chains: w3mChains,
+  projectId,
+  themeMode: 'dark',
+  themeVariables: {
+    '--w3m-accent': '#00ffaa',
+    '--w3m-color-mix': '#8D6BFF',
+    '--w3m-color-mix-strength': 15
+  }
+});
+
+// ==========================================================
+// 4. WEB3 MANAGER
 // ==========================================================
 const Web3Manager = {
-  provider: null,
   userAddress: null,
   isProcessingTx: false,
-  hasListeners: false, // Prevents duplicate event listeners (Fix 1)
 
   async init() {
-    if (window.ethereum) {
-      this.provider = window.ethereum;
-      try {
-        const accounts = await this.provider.request({ method: 'eth_accounts' });
-        if (accounts && accounts.length > 0) {
-          this.userAddress = accounts[0];
-          this.setupListeners();
-          UIManager.updateWalletUI();
-        }
-      } catch (err) { console.warn("Silent connection check failed"); }
-    }
-  },
-
-  setupListeners() {
-    // Only attach listeners once to prevent memory leaks and UI glitches
-    if (!this.provider || !this.provider.on || this.hasListeners) return;
-    
-    this.hasListeners = true;
-
-    this.provider.on('accountsChanged', (accounts) => {
-      if (!accounts || accounts.length === 0) this.disconnect();
-      else {
-        this.userAddress = accounts[0];
-        UIManager.updateWalletUI();
-      }
-    });
-
-    this.provider.on('chainChanged', () => {
-      if (!this.isProcessingTx) {
-        window.location.reload();
-      }
-    });
-  },
-
-    async connectWallet(walletType) {
-    let targetProvider = null;
-    
-    // 1. Check if the DApp is already running inside an injected wallet browser
-    if (window.ethereum || window.okxwallet || window.haha) {
-      if (walletType === 'metamask') {
-        targetProvider = window.ethereum?.providers?.find(p => p.isMetaMask) || window.ethereum;
-      } else if (walletType === 'trustwallet') {
-        targetProvider = window.ethereum?.providers?.find(p => p.isTrust) || window.ethereum;
-      } else if (walletType === 'coinbase') {
-        targetProvider = window.ethereum?.providers?.find(p => p.isCoinbaseWallet) || window.ethereum;
-      } else if (walletType === 'okx') {
-        targetProvider = window.okxwallet || window.ethereum;
-      } else if (walletType === 'haha') {
-        targetProvider = window.haha || window.ethereum;
-      }
-    } 
-    
-    // 2. If no injected provider is found (running in standard Safari/Chrome), trigger deep links
-    if (!targetProvider) {
-      const currentUrl = window.location.host + window.location.pathname;
-      const fullUrl = `https://${currentUrl}`;
-      const encodedUrl = encodeURIComponent(fullUrl);
-      
-      if (walletType === 'metamask') {
-        window.open(`https://metamask.app.link/dapp/${currentUrl}`, '_blank');
-        return false;
-      } else if (walletType === 'trustwallet') {
-        window.open(`https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`, '_blank');
-        return false;
-      } else if (walletType === 'coinbase') {
-        window.open(`https://go.cb-w.com/dapp?cb_url=${encodedUrl}`, '_blank');
-        return false;
-      } else if (walletType === 'okx') {
-        // OKX Wallet does not currently support universal deep linking
-        alert('Please open this site manually inside the OKX App browser.');
-        return false;
-      } else if (walletType === 'haha') {
-        // HaHa Wallet does not currently support universal deep linking
-        alert('Please open this site manually inside the HaHa App browser.');
-        return false;
+    modal.subscribeProvider((state) => {
+      if (state.isConnected && state.address) {
+        this.userAddress = state.address;
       } else {
-        alert(`Please open this site inside the ${walletType} App browser.`);
-        return false;
+        this.userAddress = null;
       }
-    }
-
-    // 3. Connect to the found provider
-    try {
-      this.provider = targetProvider;
-      const accounts = await this.provider.request({ method: 'eth_requestAccounts' });
-      this.userAddress = accounts[0];
-      this.setupListeners();
       UIManager.updateWalletUI();
-      return true;
-    } catch (error) { 
-      console.error("Connection rejected", error); 
-      return false; 
-    }
+    });
   },
-      
+
+  connectWallet() {
+    modal.open();
+  },
 
   disconnect() {
-    this.userAddress = null;
-    UIManager.updateWalletUI();
+    modal.disconnect();
   },
 
-  async enforceNetwork(targetChainId) {
-    const chainConfig = SUPPORTED_CHAINS[targetChainId];
-    try {
-      const currentChainId = await this.provider.request({ method: 'eth_chainId' });
-      if (currentChainId.toLowerCase() === chainConfig.chainId.toLowerCase()) return;
-    } catch (e) {
-      console.warn("Could not fetch current chain ID", e);
-    }
+  async getSigner() {
+    const walletProvider = modal.getWalletProvider();
+    if (!walletProvider) throw new Error("Wallet not fully connected.");
+    const provider = new BrowserProvider(walletProvider);
+    return await provider.getSigner();
+  },
+
+  async enforceNetwork(targetChainIdHex) {
+    const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
+    const walletProvider = modal.getWalletProvider();
+    
+    const currentProvider = new BrowserProvider(walletProvider);
+    const currentNetwork = await currentProvider.getNetwork();
+    
+    if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
 
     try {
-      await this.provider.request({ 
+      await walletProvider.request({ 
         method: 'wallet_switchEthereumChain', 
-        params: [{ chainId: chainConfig.chainId }] 
+        params: [{ chainId: targetChainIdHex }] 
       }); 
     } catch (switchError) {
+      const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
       if (switchError.code === 4902 || switchError.code === -32603) {
-        await this.provider.request({ 
+        await walletProvider.request({ 
           method: 'wallet_addEthereumChain', 
           params: [{
             chainId: chainConfig.chainId,
@@ -260,53 +187,19 @@ const Web3Manager = {
         throw switchError;
       }
     }
-  },
-
-  async waitForReceipt(txHash) {
-    let receipt = null; let attempts = 0;
-    while (receipt === null && attempts < 150) { 
-      await new Promise(resolve => setTimeout(resolve, 2000)); 
-      receipt = await this.provider.request({ method: 'eth_getTransactionReceipt', params: [txHash] });
-      attempts++;
-    }
-    return receipt;
-  },
-
-  parseUnits(valueString, decimals) {
-    if (!valueString || isNaN(valueString)) return 0n;
-    valueString = valueString.replace(/,/g, '');
-    let [integer, fraction = ""] = valueString.split(".");
-    
-    if (fraction.length > decimals) {
-      fraction = fraction.slice(0, decimals);
-    } else {
-      fraction = fraction.padEnd(decimals, "0");
-    }
-    
-    if (!integer) integer = "0";
-    return BigInt(integer + fraction);
-  },
-
-  encodeERC20Transfer(toAddress, amountBaseUnits) {
-    const methodId = "0xa9059cbb"; 
-    const paddedAddress = toAddress.toLowerCase().replace("0x", "").padStart(64, "0");
-    const amountHex = amountBaseUnits.toString(16).padStart(64, "0");
-    return methodId + paddedAddress + amountHex;
   }
 };
 
 // ==========================================================
-// 4. UI MANAGER & INTERACTIVE MODAL STATE MACHINE
+// 5. UI MANAGER
 // ==========================================================
 const UIManager = {
-  activeInfoItem: null,
-  currentFilter: 'all',
   searchQuery: '',
+  currentFilter: 'all',
 
   showDashboardUI() {
-    const splash = document.getElementById('monad-splash-screen');
+    document.getElementById('monad-splash-screen').style.display = 'none';
     const dash = document.getElementById('dashboard-window');
-    splash.style.display = 'none';
     dash.classList.add('active-screen');
     dash.classList.remove('hidden-screen');
   },
@@ -323,7 +216,6 @@ const UIManager = {
   },
 
   hideAllModalsUI() {
-    document.getElementById('web3-modal').classList.add('hidden-modal');
     document.getElementById('info-modal').classList.add('hidden-modal');
     document.getElementById('donation-modal').classList.add('hidden-modal');
     document.getElementById('article-modal').classList.add('hidden-modal');
@@ -350,7 +242,7 @@ const UIManager = {
   init() {
     const currentHash = window.location.hash;
     
-    if (currentHash === '#dashboard' || currentHash === '#info' || currentHash === '#article' || currentHash === '#donate' || currentHash === '#wallet') {
+    if (['#dashboard', '#info', '#article', '#donate'].includes(currentHash)) {
       this.showDashboardUI();
       history.replaceState({ view: 'dashboard' }, '', '#dashboard');
     } else {
@@ -373,47 +265,32 @@ const UIManager = {
 
     document.getElementById('back-to-splash-btn').addEventListener('click', () => history.back());
 
+     // Fixes the UX: Opens Donation Entry before Reown Wallet connects!
     document.getElementById('header-donate-btn').addEventListener('click', () => {
-      this.openDonationModal({ name: "MKR Global Initiative" });
+      UIManager.openDonationModal({ name: "MKR Global Initiative", desc: "Support the global treasury.", usage: "", pollution: "", preservation: "" }); 
+    });
+    
+    document.getElementById('wallet-address-display').addEventListener('click', () => {
+      Web3Manager.connectWallet();
     });
 
     document.getElementById('disconnect-wallet-btn').addEventListener('click', () => {
       Web3Manager.disconnect();
     });
 
-    document.getElementById('close-wallet-modal-btn').addEventListener('click', () => history.back());
-    
-    document.querySelectorAll('.provider-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const type = e.currentTarget.getAttribute('data-wallet');
-        if(await Web3Manager.connectWallet(type)) {
-          document.getElementById('web3-modal').classList.add('hidden-modal');
-          document.getElementById('donation-modal').classList.remove('hidden-modal');
-          history.replaceState({ view: 'modal' }, '', '#donate');
-        } 
-      });
-    });
-
-    // Close button listeners for modals
     document.getElementById('close-info-modal').addEventListener('click', () => history.back());
     document.getElementById('close-donation-modal').addEventListener('click', () => history.back());
     document.getElementById('close-article-modal').addEventListener('click', () => history.back());
 
-    // Click outside overlay to close
     document.querySelectorAll('.modal-overlay').forEach(modal => {
       modal.addEventListener('click', (e) => { if (e.target === modal) history.back(); });
     });
 
-    // Impact Card Listeners
     const natureCard = document.getElementById('nature-impact-card');
-    if (natureCard) {
-      natureCard.addEventListener('click', () => this.openArticleModal('nature'));
-    }
+    if (natureCard) natureCard.addEventListener('click', () => this.openArticleModal('nature'));
 
     const humanityCard = document.getElementById('humanity-impact-card');
-    if (humanityCard) {
-      humanityCard.addEventListener('click', () => this.openArticleModal('humanity'));
-    }
+    if (humanityCard) humanityCard.addEventListener('click', () => this.openArticleModal('humanity'));
 
     document.getElementById('project-search').addEventListener('input', (e) => {
       this.searchQuery = e.target.value.toLowerCase();
@@ -425,10 +302,8 @@ const UIManager = {
         document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
         e.target.classList.add('active');
         this.currentFilter = e.target.getAttribute('data-filter');
-        
         const titleMap = { 'all': 'Explore Verified Causes', 'nature': 'Support Nature', 'humanity': 'Support Humanity' };
         document.getElementById('dynamic-section-title').textContent = titleMap[this.currentFilter];
-        
         this.renderProjects();
       });
     });
@@ -459,7 +334,6 @@ const UIManager = {
   createInfoCard(item) {
     const div = document.createElement('div');
     div.className = 'project-card';
-    
     const progressPercent = Math.min((item.raised / item.goal) * 100, 100).toFixed(1);
     
     div.innerHTML = `
@@ -471,7 +345,6 @@ const UIManager = {
       <div class="card-body">
         <h3>${item.name}</h3>
         <p class="card-desc">${item.desc}</p>
-        
         <div class="funding-metrics">
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
@@ -481,7 +354,6 @@ const UIManager = {
             <span class="goal">of $${item.goal.toLocaleString()}</span>
           </div>
         </div>
-
         <button class="card-inline-donate-btn">Donate to ${item.name}</button>
       </div>
     `;
@@ -499,25 +371,14 @@ const UIManager = {
 
   openInfoModal(item, category) {
     document.getElementById('modal-image').src = item.img;
-    document.getElementById('modal-image').alt = item.name;
     document.getElementById('modal-title').textContent = item.name;
     document.getElementById('modal-desc').textContent = item.desc;
-
-    if (category === 'nature') {
-      document.getElementById('modal-sec1-title').textContent = "Importance & Ecosystem";
-      document.getElementById('modal-sec1-desc').textContent = item.usage;
-      document.getElementById('modal-sec2-title').textContent = "Current Threats";
-      document.getElementById('modal-sec2-desc').textContent = item.pollution;
-      document.getElementById('modal-sec3-title').textContent = "Preservation Efforts";
-      document.getElementById('modal-sec3-desc').textContent = item.preservation;
-    } else {
-      document.getElementById('modal-sec1-title').textContent = "Human Impact";
-      document.getElementById('modal-sec1-desc').textContent = item.usage;
-      document.getElementById('modal-sec2-title').textContent = "Systemic Issues";
-      document.getElementById('modal-sec2-desc').textContent = item.pollution;
-      document.getElementById('modal-sec3-title').textContent = "Web3 Solutions";
-      document.getElementById('modal-sec3-desc').textContent = item.preservation;
-    }
+    document.getElementById('modal-sec1-title').textContent = category === 'nature' ? "Importance & Ecosystem" : "Human Impact";
+    document.getElementById('modal-sec1-desc').textContent = item.usage;
+    document.getElementById('modal-sec2-title').textContent = category === 'nature' ? "Current Threats" : "Systemic Issues";
+    document.getElementById('modal-sec2-desc').textContent = item.pollution;
+    document.getElementById('modal-sec3-title').textContent = category === 'nature' ? "Preservation Efforts" : "Web3 Solutions";
+    document.getElementById('modal-sec3-desc').textContent = item.preservation;
 
     history.pushState({ view: 'modal' }, '', '#info');
     document.getElementById('info-modal').classList.remove('hidden-modal');
@@ -525,7 +386,6 @@ const UIManager = {
 
   openArticleModal(articleKey) {
     const article = articleData[articleKey];
-    
     document.getElementById('article-hero-img').src = article.img;
     document.getElementById('article-tag').textContent = article.tag;
     document.getElementById('article-title').textContent = article.title;
@@ -542,8 +402,6 @@ const UIManager = {
     const sendBtn = document.getElementById('process-donation-btn');
     sendBtn.disabled = false;
     sendBtn.textContent = "Send Donation";
-    
-    // Fix 2: Reset inline styling so CSS disabled pseudo-class applies correctly
     sendBtn.style.background = ""; 
 
     history.pushState({ view: 'modal' }, '', '#donate');
@@ -557,13 +415,11 @@ const UIManager = {
     const updateTokens = () => {
       const chainId = networkSelect.value;
       const chainConfig = SUPPORTED_CHAINS[chainId];
-      
       tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
     };
-
     networkSelect.addEventListener('change', updateTokens);
     updateTokens(); 
   },
@@ -588,13 +444,12 @@ const UIManager = {
         return;
       }
       
+      // Prompts Web3Modal connection WITHOUT closing the donation input screen
       if (!Web3Manager.userAddress) {
-        document.getElementById('donation-modal').classList.add('hidden-modal');
-        document.getElementById('web3-modal').classList.remove('hidden-modal');
-        history.replaceState({ view: 'modal' }, '', '#wallet');
+        Web3Manager.connectWallet(); 
         return; 
       }
-
+      
       try {
         processBtn.disabled = true;
         Web3Manager.isProcessingTx = true;
@@ -609,44 +464,45 @@ const UIManager = {
         statusText.textContent = `Verifying ${chainConfig.chainName}...`;
         await Web3Manager.enforceNetwork(selectedChainId);
 
+        const signer = await Web3Manager.getSigner();
         const selectedToken = tokenSelector.value;
-        let txParams = { from: Web3Manager.userAddress };
-
-        if (selectedToken === "NATIVE") {
-          const weiAmount = Web3Manager.parseUnits(userAmountStr, 18);
-          txParams.to = DESTINATION_WALLET;
-          txParams.value = "0x" + weiAmount.toString(16);
-        } else {
-          const tokenInfo = chainConfig.tokens[selectedToken];
-          const baseUnits = Web3Manager.parseUnits(userAmountStr, tokenInfo.decimals);
-          txParams.to = tokenInfo.address; 
-          txParams.data = Web3Manager.encodeERC20Transfer(DESTINATION_WALLET, baseUnits); 
-        }
+        let receipt;
 
         processBtn.textContent = "Sign in Wallet...";
         statusText.style.color = "#00ffaa";
         statusText.textContent = "Please sign the transaction in your wallet.";
 
-        const txHash = await Web3Manager.provider.request({
-          method: 'eth_sendTransaction',
-          params: [txParams],
-        });
+        if (selectedToken === "NATIVE") {
+          const weiAmount = parseUnits(userAmountStr, 18);
+          const tx = await signer.sendTransaction({
+            to: DESTINATION_WALLET,
+            value: weiAmount
+          });
+          
+          processBtn.textContent = "Processing...";
+          statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
+          receipt = await tx.wait(); 
+          
+        } else {
+          const tokenInfo = chainConfig.tokens[selectedToken];
+          const baseUnits = parseUnits(userAmountStr, tokenInfo.decimals);
+          const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
+          const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
+          
+          const tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
+          processBtn.textContent = "Processing...";
+          statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
+          receipt = await tx.wait();
+        }
 
-        processBtn.textContent = "Processing...";
-        statusText.textContent = `Tx Hash: ${txHash.slice(0,8)}... waiting for confirmation`;
-
-        const receipt = await Web3Manager.waitForReceipt(txHash);
-
-        if (receipt && receipt.status === "0x1") {
+        if (receipt && receipt.status === 1) {
           processBtn.textContent = "Thank You! ♥";
           processBtn.style.background = "#00ffaa";
           processBtn.style.color = "#000";
           statusText.textContent = "Donation Successful ✓";
           amountInput.value = '';
-        } else if (receipt === null) {
-            throw new Error("Transaction is taking longer than expected. Please check your wallet history to see if it confirmed.");
         } else {
-            throw new Error("Transaction reverted by the blockchain.");
+          throw new Error("Transaction reverted by the blockchain.");
         }
         
       } catch (error) {
@@ -655,12 +511,10 @@ const UIManager = {
         processBtn.textContent = "Send Donation";
         statusText.style.color = "#ff5555";
         
-        if (error?.message?.includes("longer than expected")) {
-             statusText.textContent = error.message;
-        } else if (error?.message?.includes("User denied") || error?.code === 4001) {
+        if (error?.code === 4001 || error?.message?.includes("User denied")) {
           statusText.textContent = "Transaction was cancelled.";
         } else {
-          statusText.textContent = "Transaction Failed. Please check balance and connection.";
+          statusText.textContent = "Transaction Failed. Check your balance.";
         }
       } finally {
         Web3Manager.isProcessingTx = false;
@@ -670,24 +524,16 @@ const UIManager = {
 };
 
 // ==========================================================
-// 5. SERVICE WORKER INITIALIZATION (Fast Mobile Loading)
+// 6. INITIALIZATION
 // ==========================================================
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        })
-        .catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-    });
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
   }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
   UIManager.init();
-  registerServiceWorker(); // This triggers the caching to stop the black screen
+  registerServiceWorker(); 
   await Web3Manager.init(); 
 });
