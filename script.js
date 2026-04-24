@@ -571,11 +571,11 @@ const UIManager = {
         } catch (waitError) {
           console.warn("Wait for confirmation interrupted:", waitError);
           // If we reach here, tx was broadcasted but connection dropped before receipt.
-          processBtn.textContent = "Thank You! ♥";
-          processBtn.style.background = "#00ffaa"; 
-          processBtn.style.color = "#000";
+          processBtn.textContent = "Tx Submitted!";
+          processBtn.style.background = "#8D6BFF"; 
+          processBtn.style.color = "#fff";
           statusText.style.color = "#00ffaa"; 
-          statusText.textContent = "Donation successful - God bless you 🍀";
+          statusText.innerHTML = `Transaction submitted successfully!<br>Hash: ${tx.hash.slice(0, 10)}...`;
           amountInput.value = '';
         }
         
@@ -611,11 +611,11 @@ const UIManager = {
         // 3. The Mobile Browser Suspension / Disconnect Edge Case
         // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
         // went to the background. The transaction was highly likely sent to the wallet successfully.
-        processBtn.textContent = "Thank You! ♥";
-        processBtn.style.background = "#00ffaa";
-        processBtn.style.color = "#000";
-        statusText.style.color = "#00ffaa"; 
-        statusText.textContent = "Donation successful - God bless you 🍀";
+        processBtn.textContent = "Check Wallet";
+        processBtn.style.background = "#8D6BFF";
+        processBtn.style.color = "#fff";
+        statusText.style.color = "#00ffaa"; // Green because it likely succeeded
+        statusText.innerHTML = `Request sent to network.<br>Please check your wallet history.`;
         amountInput.value = '';
       } finally {
         Web3Manager.isProcessingTx = false;
