@@ -130,6 +130,7 @@ const Web3Manager = {
   isProcessingTx: false,
 
   async init() {
+    // Automatically trigger UI updates if the user natively changes networks via AppKit UI
     modal.subscribeProvider((state) => {
       const wasDisconnected = !this.userAddress;
 
@@ -168,53 +169,6 @@ const Web3Manager = {
 
   disconnect() {
     modal.disconnect();
-  },
-
-  async getSigner() {
-    const walletProvider = modal.getWalletProvider();
-    if (!walletProvider) throw new Error("Wallet not fully connected.");
-    const provider = new BrowserProvider(walletProvider, "any");
-    return await provider.getSigner();
-  },
-
-  async enforceNetwork(targetChainIdHex) {
-    const walletProvider = modal.getWalletProvider();
-    if (!walletProvider) return; 
-
-    const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
-    const currentProvider = new BrowserProvider(walletProvider, "any");
-    const currentNetwork = await currentProvider.getNetwork();
-    
-    if (Number(currentNetwork.chainId) === targetChainIdDecimal) return true;
-
-    try {
-      await walletProvider.request({ 
-        method: 'wallet_switchEthereumChain', 
-        params: [{ chainId: targetChainIdHex }] 
-      });
-      await new Promise(r => setTimeout(r, 1000));
-      return true;
-    } catch (err) {
-      if (err.code === 4902 || String(err).includes("add") || String(err).includes("Unrecognized")) {
-        const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
-        await walletProvider.request({ 
-          method: 'wallet_addEthereumChain', 
-          params: [{
-            chainId: chainConfig.chainId,
-            chainName: chainConfig.chainName,
-            nativeCurrency: chainConfig.nativeCurrency,
-            rpcUrls: chainConfig.rpcUrls,
-            blockExplorerUrls: chainConfig.blockExplorerUrls
-          }] 
-        });
-        await new Promise(r => setTimeout(r, 1000));
-        return true;
-      } else {
-        console.warn("Network switch failed or rejected. Triggering manual UI.", err);
-        modal.open({ view: 'Networks' });
-        throw new Error("ACTION_REQUIRED_IN_MODAL");
-      }
-    }
   }
 };
 
@@ -267,11 +221,12 @@ const UIManager = {
     }
   },
 
+  // Dynamically alters the button to indicate a Network Sync is needed
   async updateProcessButtonState() {
     const processBtn = document.getElementById('process-donation-btn');
     const networkSelect = document.getElementById('donation-network');
-    const chainId = networkSelect.value;
-    const chainConfig = SUPPORTED_CHAINS[chainId];
+    const chainIdDecimal = parseInt(networkSelect.value, 16);
+    const chainConfig = SUPPORTED_CHAINS[networkSelect.value];
 
     if (Web3Manager.userAddress && !Web3Manager.isProcessingTx) {
       try {
@@ -279,10 +234,9 @@ const UIManager = {
         if (walletProvider) {
           const currentProvider = new BrowserProvider(walletProvider, "any");
           const currentNetwork = await currentProvider.getNetwork();
-          const currentChainIdHex = "0x" + currentNetwork.chainId.toString(16);
           
-          if (currentChainIdHex.toLowerCase() !== chainId.toLowerCase()) {
-            processBtn.textContent = `Switch to ${chainConfig.chainName}`;
+          if (Number(currentNetwork.chainId) !== chainIdDecimal) {
+            processBtn.textContent = `Sync to ${chainConfig.chainName}`;
             processBtn.style.background = "#8D6BFF"; 
             processBtn.style.color = "#fff";
           } else {
@@ -506,33 +460,33 @@ const UIManager = {
       try {
         const selectedChainId = networkSelector.value;
         const chainConfig = SUPPORTED_CHAINS[selectedChainId];
+        const selectedChainIdDecimal = parseInt(selectedChainId, 16);
         
-        // 1. Network Validation
         const walletProvider = modal.getWalletProvider();
         const currentProvider = new BrowserProvider(walletProvider, "any");
         const currentNetwork = await currentProvider.getNetwork();
-        const currentChainIdHex = "0x" + currentNetwork.chainId.toString(16);
-
-        if (currentChainIdHex.toLowerCase() !== selectedChainId.toLowerCase()) {
-            processBtn.disabled = true;
-            processBtn.textContent = "Open Wallet...";
-            statusText.classList.remove('hidden-element');
-            statusText.style.color = "#888";
-            statusText.textContent = `Please approve network switch to ${chainConfig.chainName} in your wallet.`;
-            
-            await Web3Manager.enforceNetwork(selectedChainId);
-            
+        
+        // =========================================================
+        // PHASE 1: THE GUARANTEED NATIVE NAMESPACE SYNC
+        // =========================================================
+        // Instead of forcefully pushing an RPC request to a suspended mobile wallet,
+        // we forcefully open Web3Modal's native Network UI. This triggers a proper
+        // WalletConnect v2 session update request across the bridge.
+        if (Number(currentNetwork.chainId) !== selectedChainIdDecimal) {
             processBtn.disabled = false;
-            processBtn.textContent = "Send Donation";
-            processBtn.style.background = "#00ffaa";
-            processBtn.style.color = "#000";
+            statusText.classList.remove('hidden-element');
             statusText.style.color = "#00ffaa";
-            statusText.innerHTML = `Successfully switched to ${chainConfig.chainName}.<br><b>Please click Send Donation again to proceed.</b>`;
+            statusText.innerHTML = `<b>Namespace Sync:</b> Please click <b>${chainConfig.chainName}</b> in the popup window, then click Send again.`;
+            
+            modal.open({ view: 'Networks' }); // Opens Native AppKit Selector
+            
             Web3Manager.isProcessingTx = false;
             return; 
         }
 
-        // 2. Pre-flight Validation
+        // =========================================================
+        // PHASE 2: EXECUTE TRANSACTION
+        // =========================================================
         const userAmountStr = amountInput.value.trim();
         const numericalAmount = parseFloat(userAmountStr);
         
@@ -542,30 +496,24 @@ const UIManager = {
             return;
         }
 
-        // 3. UI Update - CRITICAL UX FIX FOR MOBILE
         processBtn.disabled = true;
         processBtn.textContent = "Awaiting Signature...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#00ffaa";
-        // Explicitly telling the user to open their app bypassing Android deep link blocking
-        statusText.innerHTML = `Request sent! <b>Please manually open your wallet app</b> (e.g. HaHa) if it doesn't pop up automatically.`;
+        statusText.innerHTML = `Request sent! <b>Please manually open your wallet app</b> if it doesn't pop up automatically.`;
 
-        // 4. Force a fresh provider state before executing
-        const freshWalletProvider = modal.getWalletProvider();
-        const freshProvider = new BrowserProvider(freshWalletProvider, "any");
+        // Generate a fresh signer to absolutely guarantee Ethers fetches the updated state
+        const freshProvider = new BrowserProvider(walletProvider, "any");
         const signer = await freshProvider.getSigner();
         
         const selectedToken = tokenSelector.value;
-        const chainIdInt = parseInt(selectedChainId, 16);
         let tx;
 
-        // 5. Explicitly inject chainId to stop wallets from discarding the request
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
           tx = await signer.sendTransaction({
             to: DESTINATION_WALLET,
-            value: weiAmount,
-            chainId: chainIdInt 
+            value: weiAmount
           });
         } else {
           const tokenInfo = chainConfig.tokens[selectedToken];
@@ -573,9 +521,7 @@ const UIManager = {
           const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
           const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
           
-          tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits, {
-            chainId: chainIdInt
-          });
+          tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
         }
 
         if (!tx || !tx.hash) throw new Error("TX_HASH_NOT_GENERATED");
@@ -608,13 +554,6 @@ const UIManager = {
       } catch (error) {
         console.error("Donation process error:", error);
         processBtn.disabled = false;
-        
-        if (error.message === "ACTION_REQUIRED_IN_MODAL") {
-            processBtn.textContent = "Select Network";
-            statusText.style.color = "#00ffaa";
-            statusText.innerHTML = "<b>Action required:</b> Please select your network in the popup window, then click Send again.";
-            return;
-        }
 
         const errStr = (error?.message || error?.toString() || "").toLowerCase();
         
