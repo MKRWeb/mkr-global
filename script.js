@@ -218,7 +218,7 @@ const Web3Manager = {
 // ==========================================================
 // 5. UI MANAGER
 // ==========================================================
-    const UIManager = {
+const UIManager = {
   searchQuery: '',
   currentFilter: 'all',
 
@@ -490,7 +490,6 @@ const Web3Manager = {
 
     processBtn.addEventListener('click', async () => {
       if (Web3Manager.isProcessingTx) {
-        console.log("Transaction already processing, ignoring double click.");
         return; 
       }
 
@@ -532,24 +531,23 @@ const Web3Manager = {
         // =========================================================
         // PHASE 1: BROADCAST TRANSACTION TO NETWORK
         // =========================================================
-        try {
-          if (selectedToken === "NATIVE") {
-            const weiAmount = parseUnits(userAmountStr, 18);
-            tx = await signer.sendTransaction({
-              to: DESTINATION_WALLET,
-              value: weiAmount
-            });
-          } else {
-            const tokenInfo = chainConfig.tokens[selectedToken];
-            const baseUnits = parseUnits(userAmountStr, tokenInfo.decimals);
-            const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
-            const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
-            
-            tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
-          }
-        } catch (broadcastError) {
-          // If the user rejects the prompt or doesn't have enough funds, it throws here
-          throw broadcastError;
+        if (selectedToken === "NATIVE") {
+          const weiAmount = parseUnits(userAmountStr, 18);
+          tx = await signer.sendTransaction({
+            to: DESTINATION_WALLET,
+            value: weiAmount
+          });
+        } else {
+          const tokenInfo = chainConfig.tokens[selectedToken];
+          const baseUnits = parseUnits(userAmountStr, tokenInfo.decimals);
+          const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
+          const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
+          
+          tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
+        }
+
+        if (!tx || !tx.hash) {
+            throw new Error("TX_HASH_NOT_GENERATED");
         }
 
         // =========================================================
@@ -559,26 +557,22 @@ const Web3Manager = {
         statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
         
         try {
-          // Mobile browsers often kill background WebSockets. 
-          // We wrap wait() in a distinct try/catch so network drops don't appear as TX failures.
-          const receipt = await tx.wait(1);
+          const receipt = await tx.wait();
 
-          // Use loose equality (== 1) to support Ethers v6 BigInts (1n) or boolean/hex quirks from mobile bridges
-          if (receipt && (receipt.status == 1 || receipt.status === true || receipt.status === '0x1')) {
+          if (receipt && (receipt.status === 1 || receipt.status === 1n || receipt.status === true || receipt.status === '0x1')) {
             processBtn.textContent = "Thank You! ♥";
             processBtn.style.background = "#00ffaa";
             processBtn.style.color = "#000";
             statusText.textContent = "Donation successful - God bless you 🍀"; 
             amountInput.value = '';
           } else {
-            throw new Error("Transaction reverted by the blockchain.");
+            throw new Error("TX_REVERTED");
           }
         } catch (waitError) {
-          console.warn("Wait for confirmation interrupted, but TX was broadcasted:", waitError);
-          
-          // Transaction hit the mempool, but we lost connection waiting for the block
+          console.warn("Wait for confirmation interrupted:", waitError);
+          // If we reach here, tx was broadcasted but connection dropped before receipt.
           processBtn.textContent = "Tx Submitted!";
-          processBtn.style.background = "#8D6BFF"; // Purple styling
+          processBtn.style.background = "#8D6BFF"; 
           processBtn.style.color = "#fff";
           statusText.style.color = "#00ffaa"; 
           statusText.innerHTML = `Transaction submitted successfully!<br>Hash: ${tx.hash.slice(0, 10)}...`;
@@ -586,17 +580,43 @@ const Web3Manager = {
         }
         
       } catch (error) {
-        // True failures (User rejection, insufficient funds) reach here
-        console.error(error);
+        console.error("Donation process error:", error);
         processBtn.disabled = false;
-        processBtn.textContent = "Send Donation";
-        statusText.style.color = "#ff5555";
         
-        if (error?.code === 4001 || error?.message?.includes("User denied") || error?.message?.includes("rejected")) {
+        const errStr = (error?.message || error?.toString() || "").toLowerCase();
+        
+        // 1. Explicit Rejections (User clicked Cancel/Reject in wallet)
+        if (
+          error?.code === 4001 || 
+          error?.code === 'ACTION_REJECTED' || 
+          errStr.includes("user denied") || 
+          errStr.includes("user rejected") || 
+          errStr.includes("rejected by user") ||
+          errStr.includes("cancel")
+        ) {
+          processBtn.textContent = "Send Donation";
+          statusText.style.color = "#ff5555";
           statusText.textContent = "Transaction was cancelled.";
-        } else {
-          statusText.textContent = "Transaction Failed. Check your balance.";
+          return;
         }
+
+        // 2. Explicit On-Chain Reverts or Insufficient Funds
+        if (errStr.includes("insufficient funds") || errStr.includes("exceeds balance") || errStr.includes("tx_reverted")) {
+          processBtn.textContent = "Send Donation";
+          statusText.style.color = "#ff5555";
+          statusText.textContent = "Transaction Failed. Check your balance.";
+          return;
+        }
+
+        // 3. The Mobile Browser Suspension / Disconnect Edge Case
+        // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
+        // went to the background. The transaction was highly likely sent to the wallet successfully.
+        processBtn.textContent = "Check Wallet";
+        processBtn.style.background = "#8D6BFF";
+        processBtn.style.color = "#fff";
+        statusText.style.color = "#00ffaa"; // Green because it likely succeeded
+        statusText.innerHTML = `Request sent to network.<br>Please check your wallet history.`;
+        amountInput.value = '';
       } finally {
         Web3Manager.isProcessingTx = false;
       }
