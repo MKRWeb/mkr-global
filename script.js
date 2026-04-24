@@ -136,6 +136,7 @@ const Web3Manager = {
       if (state.isConnected && state.address) {
         this.userAddress = state.address;
         
+        // Auto-redirect and notify after sign-in
         if (wasDisconnected) {
           const donationModal = document.getElementById('donation-modal');
           const statusText = document.getElementById('tx-status');
@@ -178,6 +179,8 @@ const Web3Manager = {
 
   async enforceNetwork(targetChainIdHex) {
     const walletProvider = modal.getWalletProvider();
+    
+    // Safety check: Don't attempt to switch if no wallet is connected
     if (!walletProvider) return; 
 
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
@@ -186,20 +189,6 @@ const Web3Manager = {
     
     if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
 
-    // 1. Try Native AppKit method first (Highly recommended for mobile WalletConnect v2)
-    try {
-      if (typeof modal.switchNetwork === 'function') {
-        await modal.switchNetwork(targetChainIdDecimal);
-        // Short delay to ensure internal state is updated
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const verifyNetwork = await (new BrowserProvider(modal.getWalletProvider())).getNetwork();
-        if (verifyNetwork.chainId === BigInt(targetChainIdDecimal)) return;
-      }
-    } catch (err) {
-      console.warn("AppKit switchNetwork bypassed, attempting direct EIP-1193 request:", err);
-    }
-
-    // 2. Fallback to EIP-1193 RPC request
     try {
       await walletProvider.request({ 
         method: 'wallet_switchEthereumChain', 
@@ -207,7 +196,8 @@ const Web3Manager = {
       }); 
     } catch (switchError) {
       const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
-      if (switchError.code === 4902 || switchError.code === -32603 || String(switchError).includes('Unrecognized')) {
+      // Error 4902 or -32603 means the network is not yet added to the wallet
+      if (switchError.code === 4902 || switchError.code === -32603) {
         await walletProvider.request({ 
           method: 'wallet_addEthereumChain', 
           params: [{
@@ -451,11 +441,13 @@ const UIManager = {
       const chainId = networkSelect.value;
       const chainConfig = SUPPORTED_CHAINS[chainId];
       
+      // 1. Update the token dropdown based on the selected network
       tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
 
+      // 2. Auto-switch network logic (Only if triggered by a user click/change)
       if (event && Web3Manager.userAddress) {
         try {
           statusText.classList.remove('hidden-element');
@@ -497,7 +489,9 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
-      if (Web3Manager.isProcessingTx) return; 
+      if (Web3Manager.isProcessingTx) {
+        return; 
+      }
 
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
@@ -534,6 +528,9 @@ const UIManager = {
         statusText.style.color = "#00ffaa";
         statusText.textContent = "Please sign the transaction in your wallet.";
 
+        // =========================================================
+        // PHASE 1: BROADCAST TRANSACTION TO NETWORK
+        // =========================================================
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
           tx = await signer.sendTransaction({
@@ -553,6 +550,9 @@ const UIManager = {
             throw new Error("TX_HASH_NOT_GENERATED");
         }
 
+        // =========================================================
+        // PHASE 2: WAIT FOR CONFIRMATION 
+        // =========================================================
         processBtn.textContent = "Processing...";
         statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
         
@@ -569,11 +569,10 @@ const UIManager = {
             throw new Error("TX_REVERTED");
           }
         } catch (waitError) {
-          console.warn("Wait for confirmation interrupted (Mobile Suspension):", waitError);
-          // Firing the success state explicitly because the transaction was broadcasted, 
-          // but the RPC dropped while the user was deep-linked out to their wallet.
+          console.warn("Wait for confirmation interrupted:", waitError);
+          // If we reach here, tx was broadcasted but connection dropped before receipt.
           processBtn.textContent = "Thank You! ♥";
-          processBtn.style.background = "#00ffaa";
+          processBtn.style.background = "#00ffaa"; 
           processBtn.style.color = "#000";
           statusText.style.color = "#00ffaa"; 
           statusText.textContent = "Donation successful - God bless you 🍀";
@@ -586,7 +585,7 @@ const UIManager = {
         
         const errStr = (error?.message || error?.toString() || "").toLowerCase();
         
-        // Explicit Rejections by user
+        // 1. Explicit Rejections (User clicked Cancel/Reject in wallet)
         if (
           error?.code === 4001 || 
           error?.code === 'ACTION_REJECTED' || 
@@ -601,7 +600,7 @@ const UIManager = {
           return;
         }
 
-        // Explicit Reverts
+        // 2. Explicit On-Chain Reverts or Insufficient Funds
         if (errStr.includes("insufficient funds") || errStr.includes("exceeds balance") || errStr.includes("tx_reverted")) {
           processBtn.textContent = "Send Donation";
           statusText.style.color = "#ff5555";
@@ -609,7 +608,9 @@ const UIManager = {
           return;
         }
 
-        // Mobile Browser Suspension Edge Case directly on sendTransaction
+        // 3. The Mobile Browser Suspension / Disconnect Edge Case
+        // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
+        // went to the background. The transaction was highly likely sent to the wallet successfully.
         processBtn.textContent = "Thank You! ♥";
         processBtn.style.background = "#00ffaa";
         processBtn.style.color = "#000";
