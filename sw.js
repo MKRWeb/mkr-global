@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mkr-global-cache-v18'; // Bumped cache version
+const CACHE_NAME = 'mkr-global-cache-v19'; // Bumped cache version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
