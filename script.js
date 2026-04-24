@@ -130,14 +130,6 @@ const Web3Manager = {
   isProcessingTx: false,
 
   async init() {
-    // Check initial state on load to avoid requiring a refresh
-    try {
-      if (modal.getIsConnected()) {
-        const addr = modal.getAddress();
-        if (addr) this.userAddress = addr;
-      }
-    } catch(e) { console.warn("Failed getting initial modal state", e); }
-
     modal.subscribeProvider((state) => {
       const wasDisconnected = !this.userAddress;
 
@@ -160,7 +152,7 @@ const Web3Manager = {
           if (statusText) {
             statusText.classList.remove('hidden-element');
             statusText.style.color = "#00ffaa";
-            statusText.textContent = "Wallet Connected. You may now donate.";
+            statusText.textContent = "wallet connected donate now";
           }
         }
       } else {
@@ -168,8 +160,6 @@ const Web3Manager = {
       }
       UIManager.updateWalletUI();
     });
-    
-    UIManager.updateWalletUI(); // Final catch-all update on init
   },
 
   connectWallet() {
@@ -183,18 +173,18 @@ const Web3Manager = {
   async getSigner() {
     const walletProvider = modal.getWalletProvider();
     if (!walletProvider) throw new Error("Wallet not fully connected.");
-    
-    // FIX 2: Pass "any" as the network to prevent Ethers from caching old networks 
-    // This resolves the "manual refresh" bug when switching chains inside a single session.
-    const provider = new BrowserProvider(walletProvider, "any");
+    const provider = new BrowserProvider(walletProvider);
     return await provider.getSigner();
   },
 
   async enforceNetwork(targetChainIdHex) {
-    const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
     const walletProvider = modal.getWalletProvider();
     
-    const currentProvider = new BrowserProvider(walletProvider, "any");
+    // Safety check: Don't attempt to switch if no wallet is connected
+    if (!walletProvider) return; 
+
+    const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
+    const currentProvider = new BrowserProvider(walletProvider);
     const currentNetwork = await currentProvider.getNetwork();
     
     if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
@@ -206,6 +196,7 @@ const Web3Manager = {
       }); 
     } catch (switchError) {
       const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
+      // Error 4902 or -32603 means the network is not yet added to the wallet
       if (switchError.code === 4902 || switchError.code === -32603) {
         await walletProvider.request({ 
           method: 'wallet_addEthereumChain', 
@@ -226,9 +217,8 @@ const Web3Manager = {
 
 // ==========================================================
 // 5. UI MANAGER
-
-    // ==========================================================
-const UIManager = {
+// ==========================================================
+       const UIManager = {
   searchQuery: '',
   currentFilter: 'all',
 
@@ -437,7 +427,6 @@ const UIManager = {
     sendBtn.disabled = false;
     sendBtn.textContent = "Send Donation";
     sendBtn.style.background = ""; 
-    sendBtn.style.color = "";
 
     history.pushState({ view: 'modal' }, '', '#donate');
     document.getElementById('donation-modal').classList.remove('hidden-modal');
@@ -446,17 +435,52 @@ const UIManager = {
   setupDynamicTokenDropdown() {
     const networkSelect = document.getElementById('donation-network');
     const tokenSelect = document.getElementById('donation-token');
+    const statusText = document.getElementById('tx-status');
 
-    const updateTokens = () => {
+    const updateTokens = async (event) => {
       const chainId = networkSelect.value;
       const chainConfig = SUPPORTED_CHAINS[chainId];
+      
+      // 1. Update the token dropdown based on the selected network
       tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
+
+      // 2. Auto-switch network logic (Only if triggered by a user click/change)
+      if (event && Web3Manager.userAddress) {
+        try {
+          // Provide visual feedback
+          statusText.classList.remove('hidden-element');
+          statusText.style.color = "#888";
+          statusText.textContent = `Requesting switch to ${chainConfig.chainName}...`;
+          
+          await Web3Manager.enforceNetwork(chainId);
+          
+          // Success feedback
+          statusText.style.color = "#00ffaa";
+          statusText.textContent = `Successfully connected to ${chainConfig.chainName}`;
+          
+          // Hide success message after a few seconds
+          setTimeout(() => {
+            if (statusText.textContent.includes('Successfully')) {
+              statusText.classList.add('hidden-element');
+            }
+          }, 3000);
+
+        } catch (error) {
+          console.error("Auto-switch failed or was rejected:", error);
+          statusText.style.color = "#ff5555";
+          statusText.textContent = "Network switch cancelled.";
+        }
+      }
     };
+
+    // Attach the async function to the change event
     networkSelect.addEventListener('change', updateTokens);
-    updateTokens(); 
+    
+    // Call once synchronously on load without triggering the wallet prompt
+    updateTokens(null); 
   },
 
   setupDonationProcessor() {
@@ -471,8 +495,11 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
-      // Prevent double-clicks
-      if (Web3Manager.isProcessingTx) return;
+      // STRICT LOCK: Prevents double-execution if clicked multiple times rapidly
+      if (Web3Manager.isProcessingTx) {
+        console.log("Transaction already processing, ignoring double click.");
+        return; 
+      }
 
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
@@ -484,16 +511,15 @@ const UIManager = {
       
       if (!Web3Manager.userAddress) {
         Web3Manager.connectWallet(); 
-        statusText.classList.remove('hidden-element');
-        statusText.style.color = "#00ffaa";
-        statusText.textContent = "Please connect wallet and click Send again.";
         return; 
       }
       
+      // LOCK ACTIVATED IMMEDIATELY
       Web3Manager.isProcessingTx = true;
-      processBtn.disabled = true;
       
       try {
+        processBtn.disabled = true;
+
         processBtn.textContent = "Switching Network...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#888";
@@ -546,38 +572,19 @@ const UIManager = {
         }
         
       } catch (error) {
-        console.error("Tx Error:", error);
+        console.error(error);
+        processBtn.disabled = false;
+        processBtn.textContent = "Send Donation";
         statusText.style.color = "#ff5555";
         
-        const errStr = (error.message || error.toString()).toLowerCase();
-        
-        // FIX 1: Explicitly catch insufficient balance errors from metamask / ethers 
-        if (error?.code === 4001 || error?.code === 'ACTION_REJECTED' || errStr.includes("user denied") || errStr.includes("rejected")) {
+        if (error?.code === 4001 || error?.message?.includes("User denied")) {
           statusText.textContent = "Transaction was cancelled.";
-        } else if (errStr.includes("insufficient funds") || error?.code === 'INSUFFICIENT_FUNDS' || errStr.includes("-32000")) {
-          statusText.textContent = "Insufficient balance to cover transaction.";
         } else {
-          statusText.textContent = "Transaction Failed. Please check network/balance.";
+          statusText.textContent = "Transaction Failed. Check your balance.";
         }
       } finally {
         // UNLOCK WHEN FINISHED OR FAILED
         Web3Manager.isProcessingTx = false;
-        
-        // FIX 3: Robust UI reset protocol to prevent the button from locking permanently
-        setTimeout(() => {
-           processBtn.disabled = false;
-           // If it failed, reset the button text instantly. If it succeeded, wait 3 seconds to let them read "Thank You", then reset.
-           if (processBtn.textContent !== "Thank You! ♥") {
-               processBtn.textContent = "Send Donation";
-           } else {
-               setTimeout(() => {
-                   processBtn.textContent = "Send Donation";
-                   processBtn.style.background = "";
-                   processBtn.style.color = "";
-                   statusText.classList.add("hidden-element");
-               }, 3000); 
-           }
-        }, 1500);
       }
     });
   }
