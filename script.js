@@ -136,7 +136,6 @@ const Web3Manager = {
       if (state.isConnected && state.address) {
         this.userAddress = state.address;
         
-        // Auto-redirect and notify after sign-in
         if (wasDisconnected) {
           const donationModal = document.getElementById('donation-modal');
           const statusText = document.getElementById('tx-status');
@@ -152,7 +151,7 @@ const Web3Manager = {
           if (statusText) {
             statusText.classList.remove('hidden-element');
             statusText.style.color = "#00ffaa";
-            statusText.textContent = "wallet connected donate now";
+            statusText.textContent = "Wallet connected! Ready to donate.";
           }
         }
       } else {
@@ -173,26 +172,21 @@ const Web3Manager = {
   async getSigner() {
     const walletProvider = modal.getWalletProvider();
     if (!walletProvider) throw new Error("Wallet not fully connected.");
-    const provider = new BrowserProvider(walletProvider);
+    
+    // CRITICAL FIX: The "any" parameter prevents Ethers from throwing errors 
+    // if the underlying wallet network changes unexpectedly.
+    const provider = new BrowserProvider(walletProvider, "any");
     return await provider.getSigner();
   },
 
   async enforceNetwork(targetChainIdHex) {
-    const walletProvider = modal.getWalletProvider();
-    
-    // Safety check: Don't attempt to switch if no wallet is connected
-    if (!walletProvider) return; 
-
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
-    
-    // Use Web3Modal's native state to check the current chain
     const currentChainId = modal.getChainId();
     
     if (currentChainId === targetChainIdDecimal) return;
 
     try {
-      // modal.switchNetwork natively handles WalletConnect deep-linking 
-      // and mobile UI prompts much better than raw RPC requests
+      // Trigger the switch natively via AppKit
       await modal.switchNetwork(targetChainIdDecimal);
     } catch (switchError) {
       console.error("Network switch failed:", switchError);
@@ -421,46 +415,22 @@ const UIManager = {
   setupDynamicTokenDropdown() {
     const networkSelect = document.getElementById('donation-network');
     const tokenSelect = document.getElementById('donation-token');
-    const statusText = document.getElementById('tx-status');
 
-    const updateTokens = async (event) => {
+    const updateTokens = () => {
       const chainId = networkSelect.value;
       const chainConfig = SUPPORTED_CHAINS[chainId];
       
-      // 1. Update the token dropdown based on the selected network
       tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
-
-      // 2. Auto-switch network logic (Only if triggered by a user click/change)
-      if (event && Web3Manager.userAddress) {
-        try {
-          statusText.classList.remove('hidden-element');
-          statusText.style.color = "#888";
-          statusText.textContent = `Requesting switch to ${chainConfig.chainName}...`;
-          
-          await Web3Manager.enforceNetwork(chainId);
-          
-          statusText.style.color = "#00ffaa";
-          statusText.textContent = `Successfully connected to ${chainConfig.chainName}`;
-          
-          setTimeout(() => {
-            if (statusText.textContent.includes('Successfully')) {
-              statusText.classList.add('hidden-element');
-            }
-          }, 3000);
-
-        } catch (error) {
-          console.error("Auto-switch failed or was rejected:", error);
-          statusText.style.color = "#ff5555";
-          statusText.textContent = "Network switch cancelled.";
-        }
-      }
+      // CRITICAL FIX: We removed the auto-network switch here. 
+      // Auto-switching on a dropdown change freezes external mobile browsers.
+      // We will enforce the network when they click "Send Donation" instead.
     };
 
     networkSelect.addEventListener('change', updateTokens);
-    updateTokens(null); 
+    updateTokens(); 
   },
 
   setupDonationProcessor() {
@@ -475,9 +445,7 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
-      if (Web3Manager.isProcessingTx) {
-        return; 
-      }
+      if (Web3Manager.isProcessingTx) return; 
 
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
@@ -496,79 +464,71 @@ const UIManager = {
       
       try {
         processBtn.disabled = true;
-        processBtn.textContent = "Switching Network...";
-        statusText.classList.remove('hidden-element');
-        statusText.style.color = "#888";
-        
         const selectedChainId = networkSelector.value;
         const chainConfig = SUPPORTED_CHAINS[selectedChainId];
         
-        statusText.textContent = `Verifying ${chainConfig.chainName}...`;
+        // --- PHASE 1: ENFORCE NETWORK SAFELY ---
+        statusText.classList.remove('hidden-element');
+        processBtn.textContent = "Open Wallet to Switch...";
+        statusText.style.color = "#888";
+        statusText.innerHTML = `Please check your wallet app to switch to <b>${chainConfig.chainName}</b>...`;
+        
         await Web3Manager.enforceNetwork(selectedChainId);
 
+        // --- PHASE 2: INITIATE TRANSACTION ---
         const signer = await Web3Manager.getSigner();
         const selectedToken = tokenSelector.value;
         let tx;
 
-        processBtn.textContent = "Sign in Wallet...";
+        processBtn.textContent = "Open Wallet to Sign...";
         statusText.style.color = "#00ffaa";
-        statusText.textContent = "Please sign the transaction in your wallet.";
+        statusText.textContent = "Please sign the transaction in your wallet app.";
 
-        // =========================================================
-        // PHASE 1: BROADCAST TRANSACTION TO NETWORK
-        // =========================================================
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
-          tx = await signer.sendTransaction({
-            to: DESTINATION_WALLET,
-            value: weiAmount
-          });
+          tx = await signer.sendTransaction({ to: DESTINATION_WALLET, value: weiAmount });
         } else {
           const tokenInfo = chainConfig.tokens[selectedToken];
           const baseUnits = parseUnits(userAmountStr, tokenInfo.decimals);
           const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
           const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
-          
           tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
         }
 
-        if (!tx || !tx.hash) {
-            throw new Error("TX_HASH_NOT_GENERATED");
-        }
+        if (!tx || !tx.hash) throw new Error("TX_HASH_NOT_GENERATED");
 
-        // =========================================================
-        // PHASE 2: WAIT FOR CONFIRMATION (MOBILE-SAFE)
-        // =========================================================
+        // --- PHASE 3: ROBUST MOBILE POLLING ---
         processBtn.textContent = "Processing...";
         statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
         
-        try {
-          // Mobile browsers kill WebSockets when suspended. 
-          // We use a public JsonRpcProvider to wait for the receipt so it survives backgrounding.
-          const publicRpcUrl = chainConfig.rpcUrls[0];
-          const publicProvider = new JsonRpcProvider(publicRpcUrl);
-          
-          // Wait for the transaction to be mined using the resilient public node
-          const receipt = await publicProvider.waitForTransaction(tx.hash);
-
-          if (receipt && (receipt.status === 1 || receipt.status === 1n || receipt.status === true || receipt.status === '0x1')) {
-            processBtn.textContent = "Thank You! ♥";
-            processBtn.style.background = "#00ffaa";
-            processBtn.style.color = "#000";
-            statusText.textContent = "Donation successful - God bless you 🍀"; 
-            amountInput.value = '';
-          } else {
-            throw new Error("TX_REVERTED");
+        const publicRpcUrl = chainConfig.rpcUrls[0];
+        const publicProvider = new JsonRpcProvider(publicRpcUrl);
+        
+        let receipt = null;
+        let attempts = 0;
+        
+        // Custom polling loop: survives Chrome suspending and avoids RPC sync delays
+        while (!receipt && attempts < 30) { 
+          try {
+            receipt = await publicProvider.getTransactionReceipt(tx.hash);
+            if (!receipt) {
+              await new Promise(resolve => setTimeout(resolve, 4000)); 
+              attempts++;
+            }
+          } catch (e) {
+            await new Promise(resolve => setTimeout(resolve, 4000));
+            attempts++;
           }
-        } catch (waitError) {
-          console.warn("Wait for confirmation interrupted:", waitError);
-          // Fallback just in case the public provider also times out
-          processBtn.textContent = "Tx Submitted!";
-          processBtn.style.background = "#8D6BFF"; 
-          processBtn.style.color = "#fff";
-          statusText.style.color = "#00ffaa"; 
-          statusText.innerHTML = `Transaction submitted successfully!<br>Hash: ${tx.hash.slice(0, 10)}...`;
+        }
+
+        if (receipt && (receipt.status === 1 || receipt.status === 1n)) {
+          processBtn.textContent = "Thank You! ♥";
+          processBtn.style.background = "#00ffaa";
+          processBtn.style.color = "#000";
+          statusText.textContent = "Donation successful - God bless you 🍀"; 
           amountInput.value = '';
+        } else {
+          throw new Error("TX_FAILED_OR_TIMEOUT");
         }
         
       } catch (error) {
@@ -577,37 +537,27 @@ const UIManager = {
         
         const errStr = (error?.message || error?.toString() || "").toLowerCase();
         
-        // 1. Explicit Rejections (User clicked Cancel/Reject in wallet)
-        if (
-          error?.code === 4001 || 
-          error?.code === 'ACTION_REJECTED' || 
-          errStr.includes("user denied") || 
-          errStr.includes("user rejected") || 
-          errStr.includes("rejected by user") ||
-          errStr.includes("cancel")
-        ) {
+        if (error?.code === 4001 || errStr.includes("user rejected") || errStr.includes("cancel") || errStr.includes("denied")) {
           processBtn.textContent = "Send Donation";
           statusText.style.color = "#ff5555";
           statusText.textContent = "Transaction was cancelled.";
           return;
         }
 
-        // 2. Explicit On-Chain Reverts or Insufficient Funds
-        if (errStr.includes("insufficient funds") || errStr.includes("exceeds balance") || errStr.includes("tx_reverted")) {
+        if (errStr.includes("insufficient funds") || errStr.includes("exceeds balance")) {
           processBtn.textContent = "Send Donation";
           statusText.style.color = "#ff5555";
           statusText.textContent = "Transaction Failed. Check your balance.";
           return;
         }
 
-        // 3. The Mobile Browser Suspension / Disconnect Edge Case
-        // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
-        // went to the background. The transaction was highly likely sent to the wallet successfully.
-        processBtn.textContent = "Check Wallet";
+        // Fallback: If Chrome woke up but completely lost the WalletConnect session 
+        // before giving us the tx.hash, we display a success-adjacent message.
+        processBtn.textContent = "Tx Sent/Pending";
         processBtn.style.background = "#8D6BFF";
         processBtn.style.color = "#fff";
-        statusText.style.color = "#00ffaa"; // Green because it likely succeeded
-        statusText.innerHTML = `Request sent to network.<br>Please check your wallet history.`;
+        statusText.style.color = "#00ffaa"; 
+        statusText.innerHTML = `Request initiated. If signed in your wallet, it will complete successfully!`;
         amountInput.value = '';
       } finally {
         Web3Manager.isProcessingTx = false;
