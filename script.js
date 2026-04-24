@@ -158,7 +158,7 @@ const Web3Manager = {
         this.userAddress = null;
       }
       UIManager.updateWalletUI();
-      UIManager.updateProcessButtonState(); // Update UI if network changed natively
+      UIManager.updateProcessButtonState(); 
     });
   },
 
@@ -192,11 +192,9 @@ const Web3Manager = {
         method: 'wallet_switchEthereumChain', 
         params: [{ chainId: targetChainIdHex }] 
       });
-      // Short delay allows the mobile wallet to broadcast the state change
       await new Promise(r => setTimeout(r, 1000));
       return true;
     } catch (err) {
-      // Handle the case where the network isn't added to the user's wallet yet
       if (err.code === 4902 || String(err).includes("add") || String(err).includes("Unrecognized")) {
         const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
         await walletProvider.request({ 
@@ -269,7 +267,6 @@ const UIManager = {
     }
   },
 
-  // NEW: Helper to dynamically adjust the button to indicate a Two-Step process
   async updateProcessButtonState() {
     const processBtn = document.getElementById('process-donation-btn');
     const networkSelect = document.getElementById('donation-network');
@@ -286,11 +283,11 @@ const UIManager = {
           
           if (currentChainIdHex.toLowerCase() !== chainId.toLowerCase()) {
             processBtn.textContent = `Switch to ${chainConfig.chainName}`;
-            processBtn.style.background = "#8D6BFF"; // Purple for network action
+            processBtn.style.background = "#8D6BFF"; 
             processBtn.style.color = "#fff";
           } else {
             processBtn.textContent = "Send Donation";
-            processBtn.style.background = "#00ffaa"; // Green for send action
+            processBtn.style.background = "#00ffaa"; 
             processBtn.style.color = "#000";
           }
         }
@@ -478,7 +475,6 @@ const UIManager = {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
       
-      // Update the button visually so users know a switch is needed before sending
       await this.updateProcessButtonState();
     };
 
@@ -511,8 +507,7 @@ const UIManager = {
         const selectedChainId = networkSelector.value;
         const chainConfig = SUPPORTED_CHAINS[selectedChainId];
         
-        // --- TWO-STEP ARCHITECTURE ---
-        // 1. Check if we need to switch networks first
+        // 1. Network Validation
         const walletProvider = modal.getWalletProvider();
         const currentProvider = new BrowserProvider(walletProvider, "any");
         const currentNetwork = await currentProvider.getNetwork();
@@ -527,8 +522,6 @@ const UIManager = {
             
             await Web3Manager.enforceNetwork(selectedChainId);
             
-            // STOP EXECUTION. Require the user to click again for the actual transaction.
-            // This guarantees the browser isn't suspended during the transaction broadcast.
             processBtn.disabled = false;
             processBtn.textContent = "Send Donation";
             processBtn.style.background = "#00ffaa";
@@ -539,7 +532,7 @@ const UIManager = {
             return; 
         }
 
-        // 2. We are on the correct network, proceed to send
+        // 2. Pre-flight Validation
         const userAmountStr = amountInput.value.trim();
         const numericalAmount = parseFloat(userAmountStr);
         
@@ -549,21 +542,30 @@ const UIManager = {
             return;
         }
 
+        // 3. UI Update - CRITICAL UX FIX FOR MOBILE
         processBtn.disabled = true;
-        processBtn.textContent = "Sign in Wallet...";
+        processBtn.textContent = "Awaiting Signature...";
         statusText.classList.remove('hidden-element');
         statusText.style.color = "#00ffaa";
-        statusText.innerHTML = `Please sign the transaction in your wallet.`;
+        // Explicitly telling the user to open their app bypassing Android deep link blocking
+        statusText.innerHTML = `Request sent! <b>Please manually open your wallet app</b> (e.g. HaHa) if it doesn't pop up automatically.`;
 
-        const signer = await currentProvider.getSigner();
+        // 4. Force a fresh provider state before executing
+        const freshWalletProvider = modal.getWalletProvider();
+        const freshProvider = new BrowserProvider(freshWalletProvider, "any");
+        const signer = await freshProvider.getSigner();
+        
         const selectedToken = tokenSelector.value;
+        const chainIdInt = parseInt(selectedChainId, 16);
         let tx;
 
+        // 5. Explicitly inject chainId to stop wallets from discarding the request
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
           tx = await signer.sendTransaction({
             to: DESTINATION_WALLET,
-            value: weiAmount
+            value: weiAmount,
+            chainId: chainIdInt 
           });
         } else {
           const tokenInfo = chainConfig.tokens[selectedToken];
@@ -571,7 +573,9 @@ const UIManager = {
           const erc20Abi = ["function transfer(address to, uint256 amount) returns (bool)"];
           const tokenContract = new Contract(tokenInfo.address, erc20Abi, signer);
           
-          tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
+          tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits, {
+            chainId: chainIdInt
+          });
         }
 
         if (!tx || !tx.hash) throw new Error("TX_HASH_NOT_GENERATED");
@@ -622,7 +626,7 @@ const UIManager = {
           errStr.includes("rejected by user") ||
           errStr.includes("cancel")
         ) {
-          UIManager.updateProcessButtonState(); // Reset button text properly
+          UIManager.updateProcessButtonState(); 
           statusText.style.color = "#ff5555";
           statusText.textContent = "Transaction was cancelled.";
           return;
