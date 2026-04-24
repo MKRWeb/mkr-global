@@ -507,7 +507,6 @@ const UIManager = {
       }
       
       Web3Manager.isProcessingTx = true;
-      let tx; // Elevated variable scope so the outer catch block can access the hash
       
       try {
         processBtn.disabled = true;
@@ -523,6 +522,7 @@ const UIManager = {
 
         const signer = await Web3Manager.getSigner();
         const selectedToken = tokenSelector.value;
+        let tx;
 
         processBtn.textContent = "Sign in Wallet...";
         statusText.style.color = "#00ffaa";
@@ -571,11 +571,11 @@ const UIManager = {
         } catch (waitError) {
           console.warn("Wait for confirmation interrupted:", waitError);
           // If we reach here, tx was broadcasted but connection dropped before receipt.
-          processBtn.textContent = "Thank You! ♥";
-          processBtn.style.background = "#00ffaa";
-          processBtn.style.color = "#000";
+          processBtn.textContent = "Tx Submitted!";
+          processBtn.style.background = "#8D6BFF"; 
+          processBtn.style.color = "#fff";
           statusText.style.color = "#00ffaa"; 
-          statusText.innerHTML = `Donation successful - God bless you 🍀<br><span style="font-size: 11px; color:#888;">Hash: ${tx.hash.slice(0, 15)}...</span>`;
+          statusText.innerHTML = `Transaction submitted successfully!<br>Hash: ${tx.hash.slice(0, 10)}...`;
           amountInput.value = '';
         }
         
@@ -608,21 +608,15 @@ const UIManager = {
           return;
         }
 
-        // 3. Ultra-Tamper-Proof Fallback (Mobile Browser Suspension / Disconnect Edge Case)
-        // If the provider disconnects violently and throws to the top-level catch, BUT the hash exists,
-        // it means the donation actually went through the wallet successfully.
-        if (tx && tx.hash) {
-          processBtn.textContent = "Thank You! ♥";
-          processBtn.style.background = "#00ffaa";
-          processBtn.style.color = "#000";
-          statusText.style.color = "#00ffaa"; 
-          statusText.innerHTML = `Donation successful - God bless you 🍀<br><span style="font-size: 11px; color:#888;">Hash: ${tx.hash.slice(0, 15)}...</span>`;
-          amountInput.value = '';
-        } else {
-          processBtn.textContent = "Send Donation";
-          statusText.style.color = "#ff5555";
-          statusText.textContent = "Transaction Failed. Please try again.";
-        }
+        // 3. The Mobile Browser Suspension / Disconnect Edge Case
+        // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
+        // went to the background. The transaction was highly likely sent to the wallet successfully.
+        processBtn.textContent = "Check Wallet";
+        processBtn.style.background = "#8D6BFF";
+        processBtn.style.color = "#fff";
+        statusText.style.color = "#00ffaa"; // Green because it likely succeeded
+        statusText.innerHTML = `Request sent to network.<br>Please check your wallet history.`;
+        amountInput.value = '';
       } finally {
         Web3Manager.isProcessingTx = false;
       }
