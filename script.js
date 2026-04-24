@@ -136,7 +136,6 @@ const Web3Manager = {
       if (state.isConnected && state.address) {
         this.userAddress = state.address;
         
-        // Auto-redirect and notify after sign-in
         if (wasDisconnected) {
           const donationModal = document.getElementById('donation-modal');
           const statusText = document.getElementById('tx-status');
@@ -173,18 +172,18 @@ const Web3Manager = {
   async getSigner() {
     const walletProvider = modal.getWalletProvider();
     if (!walletProvider) throw new Error("Wallet not fully connected.");
-    const provider = new BrowserProvider(walletProvider);
+    // Passing "any" prevents ethers from aggressively caching the old chain on external browsers
+    const provider = new BrowserProvider(walletProvider, "any");
     return await provider.getSigner();
   },
 
   async enforceNetwork(targetChainIdHex) {
     const walletProvider = modal.getWalletProvider();
-    
-    // Safety check: Don't attempt to switch if no wallet is connected
     if (!walletProvider) return; 
 
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
-    const currentProvider = new BrowserProvider(walletProvider);
+    // Initializing with "any" flag to ensure cross-chain syncs don't crash
+    const currentProvider = new BrowserProvider(walletProvider, "any");
     const currentNetwork = await currentProvider.getNetwork();
     
     if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
@@ -194,10 +193,14 @@ const Web3Manager = {
         method: 'wallet_switchEthereumChain', 
         params: [{ chainId: targetChainIdHex }] 
       }); 
+      // Important: Allow the mobile wallet connection a short moment to synchronize
+      await new Promise(r => setTimeout(r, 1000));
     } catch (switchError) {
       const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
-      // Error 4902 or -32603 means the network is not yet added to the wallet
-      if (switchError.code === 4902 || switchError.code === -32603) {
+      const errStr = (switchError?.message || switchError?.toString() || "").toLowerCase();
+      
+      // Extended error catching format primarily required by mobile WalletConnect wrappers 
+      if (switchError.code === 4902 || switchError.code === -32603 || errStr.includes("addethereumchain") || errStr.includes("unrecognized chain id") || errStr.includes("not added")) {
         await walletProvider.request({ 
           method: 'wallet_addEthereumChain', 
           params: [{
@@ -208,6 +211,7 @@ const Web3Manager = {
             blockExplorerUrls: chainConfig.blockExplorerUrls
           }] 
         });
+        await new Promise(r => setTimeout(r, 1000));
       } else {
         throw switchError;
       }
@@ -435,46 +439,23 @@ const UIManager = {
   setupDynamicTokenDropdown() {
     const networkSelect = document.getElementById('donation-network');
     const tokenSelect = document.getElementById('donation-token');
-    const statusText = document.getElementById('tx-status');
 
-    const updateTokens = async (event) => {
+    const updateTokens = () => {
       const chainId = networkSelect.value;
       const chainConfig = SUPPORTED_CHAINS[chainId];
       
-      // 1. Update the token dropdown based on the selected network
       tokenSelect.innerHTML = `<option value="NATIVE">${chainConfig.native}</option>`;
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
-
-      // 2. Auto-switch network logic (Only if triggered by a user click/change)
-      if (event && Web3Manager.userAddress) {
-        try {
-          statusText.classList.remove('hidden-element');
-          statusText.style.color = "#888";
-          statusText.textContent = `Requesting switch to ${chainConfig.chainName}...`;
-          
-          await Web3Manager.enforceNetwork(chainId);
-          
-          statusText.style.color = "#00ffaa";
-          statusText.textContent = `Successfully connected to ${chainConfig.chainName}`;
-          
-          setTimeout(() => {
-            if (statusText.textContent.includes('Successfully')) {
-              statusText.classList.add('hidden-element');
-            }
-          }, 3000);
-
-        } catch (error) {
-          console.error("Auto-switch failed or was rejected:", error);
-          statusText.style.color = "#ff5555";
-          statusText.textContent = "Network switch cancelled.";
-        }
-      }
+      
+      // Removed auto-switch logic here. In external mobile browsers, switching networks 
+      // without a direct button click (like simply changing a dropdown) suppresses 
+      // the deep link pop-up, silently breaking the UI connection.
     };
 
     networkSelect.addEventListener('change', updateTokens);
-    updateTokens(null); 
+    updateTokens(); 
   },
 
   setupDonationProcessor() {
@@ -489,9 +470,7 @@ const UIManager = {
     });
 
     processBtn.addEventListener('click', async () => {
-      if (Web3Manager.isProcessingTx) {
-        return; 
-      }
+      if (Web3Manager.isProcessingTx) return; 
 
       const userAmountStr = amountInput.value.trim();
       const numericalAmount = parseFloat(userAmountStr);
@@ -517,6 +496,7 @@ const UIManager = {
         const selectedChainId = networkSelector.value;
         const chainConfig = SUPPORTED_CHAINS[selectedChainId];
         
+        // This validates properly now via user click context
         statusText.textContent = `Verifying ${chainConfig.chainName}...`;
         await Web3Manager.enforceNetwork(selectedChainId);
 
@@ -528,9 +508,6 @@ const UIManager = {
         statusText.style.color = "#00ffaa";
         statusText.textContent = "Please sign the transaction in your wallet.";
 
-        // =========================================================
-        // PHASE 1: BROADCAST TRANSACTION TO NETWORK
-        // =========================================================
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
           tx = await signer.sendTransaction({
@@ -546,13 +523,8 @@ const UIManager = {
           tx = await tokenContract.transfer(DESTINATION_WALLET, baseUnits);
         }
 
-        if (!tx || !tx.hash) {
-            throw new Error("TX_HASH_NOT_GENERATED");
-        }
+        if (!tx || !tx.hash) throw new Error("TX_HASH_NOT_GENERATED");
 
-        // =========================================================
-        // PHASE 2: WAIT FOR CONFIRMATION 
-        // =========================================================
         processBtn.textContent = "Processing...";
         statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
         
@@ -570,7 +542,6 @@ const UIManager = {
           }
         } catch (waitError) {
           console.warn("Wait for confirmation interrupted:", waitError);
-          // If we reach here, tx was broadcasted but connection dropped before receipt.
           processBtn.textContent = "Tx Submitted!";
           processBtn.style.background = "#8D6BFF"; 
           processBtn.style.color = "#fff";
@@ -585,7 +556,6 @@ const UIManager = {
         
         const errStr = (error?.message || error?.toString() || "").toLowerCase();
         
-        // 1. Explicit Rejections (User clicked Cancel/Reject in wallet)
         if (
           error?.code === 4001 || 
           error?.code === 'ACTION_REJECTED' || 
@@ -600,7 +570,6 @@ const UIManager = {
           return;
         }
 
-        // 2. Explicit On-Chain Reverts or Insufficient Funds
         if (errStr.includes("insufficient funds") || errStr.includes("exceeds balance") || errStr.includes("tx_reverted")) {
           processBtn.textContent = "Send Donation";
           statusText.style.color = "#ff5555";
@@ -608,13 +577,10 @@ const UIManager = {
           return;
         }
 
-        // 3. The Mobile Browser Suspension / Disconnect Edge Case
-        // If the error reaches here, it was likely caused by the WebSocket dying when Chrome 
-        // went to the background. The transaction was highly likely sent to the wallet successfully.
         processBtn.textContent = "Check Wallet";
         processBtn.style.background = "#8D6BFF";
         processBtn.style.color = "#fff";
-        statusText.style.color = "#00ffaa"; // Green because it likely succeeded
+        statusText.style.color = "#00ffaa";
         statusText.innerHTML = `Request sent to network.<br>Please check your wallet history.`;
         amountInput.value = '';
       } finally {
