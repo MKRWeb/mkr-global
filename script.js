@@ -172,7 +172,6 @@ const Web3Manager = {
   async getSigner() {
     const walletProvider = modal.getWalletProvider();
     if (!walletProvider) throw new Error("Wallet not fully connected.");
-    // Passing "any" prevents ethers from aggressively caching the old chain on external browsers
     const provider = new BrowserProvider(walletProvider, "any");
     return await provider.getSigner();
   },
@@ -182,39 +181,61 @@ const Web3Manager = {
     if (!walletProvider) return; 
 
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
-    // Initializing with "any" flag to ensure cross-chain syncs don't crash
     const currentProvider = new BrowserProvider(walletProvider, "any");
     const currentNetwork = await currentProvider.getNetwork();
     
-    if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
+    // 1. If we are already on the right network, proceed immediately.
+    if (Number(currentNetwork.chainId) === targetChainIdDecimal) return true;
+
+    // 2. Setup the background network switch request
+    const requestSwitch = async () => {
+        try {
+            await walletProvider.request({ 
+                method: 'wallet_switchEthereumChain', 
+                params: [{ chainId: targetChainIdHex }] 
+            });
+        } catch (err) {
+            if (err.code === 4902 || String(err).includes("add")) {
+                const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
+                await walletProvider.request({ 
+                    method: 'wallet_addEthereumChain', 
+                    params: [{
+                        chainId: chainConfig.chainId,
+                        chainName: chainConfig.chainName,
+                        nativeCurrency: chainConfig.nativeCurrency,
+                        rpcUrls: chainConfig.rpcUrls,
+                        blockExplorerUrls: chainConfig.blockExplorerUrls
+                    }] 
+                });
+            } else {
+                throw err;
+            }
+        }
+    };
 
     try {
-      await walletProvider.request({ 
-        method: 'wallet_switchEthereumChain', 
-        params: [{ chainId: targetChainIdHex }] 
-      }); 
-      // Important: Allow the mobile wallet connection a short moment to synchronize
-      await new Promise(r => setTimeout(r, 1000));
-    } catch (switchError) {
-      const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
-      const errStr = (switchError?.message || switchError?.toString() || "").toLowerCase();
-      
-      // Extended error catching format primarily required by mobile WalletConnect wrappers 
-      if (switchError.code === 4902 || switchError.code === -32603 || errStr.includes("addethereumchain") || errStr.includes("unrecognized chain id") || errStr.includes("not added")) {
-        await walletProvider.request({ 
-          method: 'wallet_addEthereumChain', 
-          params: [{
-            chainId: chainConfig.chainId,
-            chainName: chainConfig.chainName,
-            nativeCurrency: chainConfig.nativeCurrency,
-            rpcUrls: chainConfig.rpcUrls,
-            blockExplorerUrls: chainConfig.blockExplorerUrls
-          }] 
-        });
-        await new Promise(r => setTimeout(r, 1000));
-      } else {
-        throw switchError;
-      }
+        // 3. THE FIX: Race the network switch against a 4.5 second timeout.
+        // If mobile Chrome blocks the deep link, the promise hangs. This timeout catches the freeze.
+        await Promise.race([
+            requestSwitch(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("MOBILE_WALLET_TIMEOUT")), 4500))
+        ]);
+        
+        // Wait for state sync
+        await new Promise(r => setTimeout(r, 1500));
+        
+        // Verify it actually switched
+        const checkNet = await (new BrowserProvider(walletProvider, "any")).getNetwork();
+        if (Number(checkNet.chainId) === targetChainIdDecimal) return true;
+        
+        throw new Error("Switch validation failed");
+
+    } catch (err) {
+        // 4. FALLBACK: If Chrome blocked the RPC switch (or it timed out), 
+        // we force open the highly-reliable Web3Modal Network Selector UI.
+        console.warn("Background switch blocked by mobile browser. Opening native UI.", err);
+        modal.open({ view: 'Networks' });
+        throw new Error("ACTION_REQUIRED_IN_MODAL");
     }
   }
 };
@@ -448,10 +469,6 @@ const UIManager = {
       for (const tokenSymbol in chainConfig.tokens) {
         tokenSelect.innerHTML += `<option value="${tokenSymbol}">${tokenSymbol}</option>`;
       }
-      
-      // Removed auto-switch logic here. In external mobile browsers, switching networks 
-      // without a direct button click (like simply changing a dropdown) suppresses 
-      // the deep link pop-up, silently breaking the UI connection.
     };
 
     networkSelect.addEventListener('change', updateTokens);
@@ -496,8 +513,9 @@ const UIManager = {
         const selectedChainId = networkSelector.value;
         const chainConfig = SUPPORTED_CHAINS[selectedChainId];
         
-        // This validates properly now via user click context
         statusText.textContent = `Verifying ${chainConfig.chainName}...`;
+        
+        // This validates properly and intercepts mobile blocks now
         await Web3Manager.enforceNetwork(selectedChainId);
 
         const signer = await Web3Manager.getSigner();
@@ -506,7 +524,7 @@ const UIManager = {
 
         processBtn.textContent = "Sign in Wallet...";
         statusText.style.color = "#00ffaa";
-        statusText.textContent = "Please sign the transaction in your wallet.";
+        statusText.innerHTML = `Please sign the transaction in your wallet.`;
 
         if (selectedToken === "NATIVE") {
           const weiAmount = parseUnits(userAmountStr, 18);
@@ -554,6 +572,14 @@ const UIManager = {
         console.error("Donation process error:", error);
         processBtn.disabled = false;
         
+        // --- NEW: Handle Mobile Modal Fallback Gracefully ---
+        if (error.message === "ACTION_REQUIRED_IN_MODAL") {
+            processBtn.textContent = "Send Donation";
+            statusText.style.color = "#00ffaa";
+            statusText.innerHTML = "<b>Action required:</b> Please select your network in the popup window, then click Send again.";
+            return;
+        }
+
         const errStr = (error?.message || error?.toString() || "").toLowerCase();
         
         if (
