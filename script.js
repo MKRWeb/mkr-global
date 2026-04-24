@@ -2,7 +2,7 @@
 // 0. IMPORTS (Web3Modal & Ethers.js via CDN)
 // ==========================================================
 import { createWeb3Modal, defaultConfig } from 'https://esm.sh/@web3modal/ethers@5.0.11'
-import { BrowserProvider, Contract, parseUnits } from 'https://esm.sh/ethers@6.11.1'
+import { BrowserProvider, Contract, parseUnits, JsonRpcProvider } from 'https://esm.sh/ethers@6.11.1'
 
 // ==========================================================
 // 1. CONSTANTS & HIGH-CAPACITY MULTI-CHAIN CONFIGURATION
@@ -184,33 +184,19 @@ const Web3Manager = {
     if (!walletProvider) return; 
 
     const targetChainIdDecimal = parseInt(targetChainIdHex, 16);
-    const currentProvider = new BrowserProvider(walletProvider);
-    const currentNetwork = await currentProvider.getNetwork();
     
-    if (currentNetwork.chainId === BigInt(targetChainIdDecimal)) return;
+    // Use Web3Modal's native state to check the current chain
+    const currentChainId = modal.getChainId();
+    
+    if (currentChainId === targetChainIdDecimal) return;
 
     try {
-      await walletProvider.request({ 
-        method: 'wallet_switchEthereumChain', 
-        params: [{ chainId: targetChainIdHex }] 
-      }); 
+      // modal.switchNetwork natively handles WalletConnect deep-linking 
+      // and mobile UI prompts much better than raw RPC requests
+      await modal.switchNetwork(targetChainIdDecimal);
     } catch (switchError) {
-      const chainConfig = SUPPORTED_CHAINS[targetChainIdHex];
-      // Error 4902 or -32603 means the network is not yet added to the wallet
-      if (switchError.code === 4902 || switchError.code === -32603) {
-        await walletProvider.request({ 
-          method: 'wallet_addEthereumChain', 
-          params: [{
-            chainId: chainConfig.chainId,
-            chainName: chainConfig.chainName,
-            nativeCurrency: chainConfig.nativeCurrency,
-            rpcUrls: chainConfig.rpcUrls,
-            blockExplorerUrls: chainConfig.blockExplorerUrls
-          }] 
-        });
-      } else {
-        throw switchError;
-      }
+      console.error("Network switch failed:", switchError);
+      throw switchError;
     }
   }
 };
@@ -551,13 +537,19 @@ const UIManager = {
         }
 
         // =========================================================
-        // PHASE 2: WAIT FOR CONFIRMATION 
+        // PHASE 2: WAIT FOR CONFIRMATION (MOBILE-SAFE)
         // =========================================================
         processBtn.textContent = "Processing...";
         statusText.textContent = `Tx Hash: ${tx.hash.slice(0,8)}... waiting for confirmation`;
         
         try {
-          const receipt = await tx.wait();
+          // Mobile browsers kill WebSockets when suspended. 
+          // We use a public JsonRpcProvider to wait for the receipt so it survives backgrounding.
+          const publicRpcUrl = chainConfig.rpcUrls[0];
+          const publicProvider = new JsonRpcProvider(publicRpcUrl);
+          
+          // Wait for the transaction to be mined using the resilient public node
+          const receipt = await publicProvider.waitForTransaction(tx.hash);
 
           if (receipt && (receipt.status === 1 || receipt.status === 1n || receipt.status === true || receipt.status === '0x1')) {
             processBtn.textContent = "Thank You! ♥";
@@ -570,7 +562,7 @@ const UIManager = {
           }
         } catch (waitError) {
           console.warn("Wait for confirmation interrupted:", waitError);
-          // If we reach here, tx was broadcasted but connection dropped before receipt.
+          // Fallback just in case the public provider also times out
           processBtn.textContent = "Tx Submitted!";
           processBtn.style.background = "#8D6BFF"; 
           processBtn.style.color = "#fff";
