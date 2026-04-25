@@ -93,7 +93,7 @@ const articleData = {
 // ==========================================================
 // 3. WEB3MODAL (APPKIT) SETUP
 // ==========================================================
-const projectId = '6836a01e417cc80c4ef5a7048644b4e5'; 
+const projectId = 'ff2fa04417b4e3b802961da55db12d63'; 
 
 const getSafeUrl = () => {
   const origin = window.location.origin;
