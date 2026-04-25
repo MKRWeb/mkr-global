@@ -124,7 +124,7 @@ const modal = createWeb3Modal({
   chains: w3mChains,
   projectId,
   chainImages: {
-    143: 'https://avatars.githubusercontent.com/u/111867140?v=4' 
+    143: 'https://dl.svgcdn.com/png/token-branded/monad-400.png' 
   },
   themeMode: 'dark',
   themeVariables: {
