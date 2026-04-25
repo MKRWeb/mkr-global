@@ -123,6 +123,9 @@ const modal = createWeb3Modal({
   ethersConfig: defaultConfig({ metadata }),
   chains: w3mChains,
   projectId,
+  chainImages: {
+    143: 'https://avatars.githubusercontent.com/u/111867140?v=4' 
+  },
   themeMode: 'dark',
   themeVariables: {
     '--w3m-accent': '#00ffaa',
@@ -130,6 +133,7 @@ const modal = createWeb3Modal({
     '--w3m-color-mix-strength': 15
   }
 });
+
 
 // ==========================================================
 // 4. WEB3 MANAGER (GLOBAL STATE)
