@@ -1,10 +1,10 @@
-const CACHE_NAME = 'mkr-global-cache-v11'; // Bumped cache version
+const CACHE_NAME = 'mkr-global-cache-v12'; // Bumped cache version
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/style.css',
   '/script.js',
-  '/cat_dev.jpg' 
+  '/mkr_global.gif' 
 ];
 
 // Install Event: Cache essential files
