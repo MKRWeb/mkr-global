@@ -108,7 +108,7 @@ const metadata = {
   name: 'MKR Global',
   description: 'Borderless Web3 Donations',
   url: safeUrl,
-  icons: [safeUrl + '/cat_dev.jpg']
+  icons: [safeUrl + '/mkr_global.gif']
 };
 
 const w3mChains = Object.values(SUPPORTED_CHAINS).map(c => ({
