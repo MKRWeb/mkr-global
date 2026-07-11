@@ -30,5 +30,5 @@ cd mkr-global
 npx serve .
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the AGPL-3.0 License - see the LICENSE file for details.
 
