@@ -124,7 +124,7 @@ const modal = createWeb3Modal({
   chains: w3mChains,
   projectId,
   chainImages: {
-    143: 'https://dl.svgcdn.com/png/token-branded/monad-400.png' 
+    143: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg56xwLpjKTJQOKPEHAtIN8WfhkDxeyvTWBsxHA4Rx9uB_i0DHr4qw0zc0NcdPew9473P4lws4P2TV85xw9D7b6yMVmvbu5kuf6v5SAiQmkkw25qxyi2QOFIUFswL1SBg_SURTNlkOmnOkjQMyWNt37T2w4iUS8MnRZhRuhgyP8P1DUtXYJ5fpRS3jyRmQ/s480/monad-logo.png' 
   },
   themeMode: 'dark',
   themeVariables: {
